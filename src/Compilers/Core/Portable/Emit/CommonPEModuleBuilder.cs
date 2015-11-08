@@ -21,6 +21,7 @@ namespace Microsoft.CodeAnalysis.Emit
         internal abstract Cci.IMethodReference Translate(IMethodSymbol symbol, DiagnosticBag diagnostics, bool needDeclaration);
         internal abstract bool SupportsPrivateImplClass { get; }
         internal abstract ImmutableArray<Cci.INamespaceTypeDefinition> GetAnonymousTypes();
+        internal abstract ImmutableArray<Cci.INamespaceTypeDefinition> GetMethodGroupConversionCacheFrames();
         internal abstract Compilation CommonCompilation { get; }
         internal abstract CommonModuleCompilationState CommonModuleCompilationState { get; }
         internal abstract void CompilationFinished();
@@ -182,6 +183,13 @@ namespace Microsoft.CodeAnalysis.Emit
             AddTopLevelType(names, _rootModuleType);
             VisitTopLevelType(noPiaIndexer, _rootModuleType);
             yield return _rootModuleType;
+
+            foreach (var type in this.GetMethodGroupConversionCacheFrames())
+            {
+                AddTopLevelType(names, type);
+                VisitTopLevelType(noPiaIndexer, type);
+                yield return type;
+            }
 
             foreach (var type in this.GetAnonymousTypes())
             {

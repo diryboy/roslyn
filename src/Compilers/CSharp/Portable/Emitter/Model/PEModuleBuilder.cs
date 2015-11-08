@@ -342,6 +342,25 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             return null;
         }
 
+        internal virtual ImmutableArray<MethodSymbol> GetPreviousMethodGroupConversionTargets()
+        {
+            return ImmutableArray<MethodSymbol>.Empty;
+        }
+
+        internal virtual int GetNextMethodGroupConversionCacheFrameIndex()
+        {
+            return 0;
+        }
+
+        internal virtual bool TryGetMethodGroupConversionCacheFrameName(NamedTypeSymbol frame, out string name, out int index)
+        {
+            Debug.Assert(Compilation == frame.DeclaringCompilation);
+
+            name = null;
+            index = -1;
+            return false;
+        }
+
         internal virtual ImmutableArray<AnonymousTypeKey> GetPreviousAnonymousTypes()
         {
             return ImmutableArray<AnonymousTypeKey>.Empty;
@@ -369,6 +388,16 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             }
 
             return StaticCast<Cci.INamespaceTypeDefinition>.From(Compilation.AnonymousTypeManager.GetAllCreatedTemplates());
+        }
+
+        internal override ImmutableArray<Cci.INamespaceTypeDefinition> GetMethodGroupConversionCacheFrames()
+        {
+            if (EmitOptions.EmitMetadataOnly)
+            {
+                return ImmutableArray<Cci.INamespaceTypeDefinition>.Empty;
+            }
+
+            return StaticCast<Cci.INamespaceTypeDefinition>.From(Compilation.MethodGroupConversionCacheFrameManager.GetAllCreatedFrames());
         }
 
         /// <summary>

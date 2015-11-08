@@ -78,6 +78,11 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </summary>
         private readonly AnonymousTypeManager _anonymousTypeManager;
 
+        /// <summary>
+        /// Manages cache frames created for implicit method group conversion from static methods.
+        /// </summary>
+        private readonly MethodGroupConversionCacheFrameManager _methodGroupConversionCacheFrameManager;
+
         private NamespaceSymbol _lazyGlobalNamespace;
 
         internal readonly BuiltInOperators builtInOperators;
@@ -111,48 +116,24 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </summary>
         private HashSet<SyntaxTree> _lazyCompilationUnitCompletedTrees;
 
-        public override string Language
-        {
-            get
-            {
-                return LanguageNames.CSharp;
-            }
-        }
+        public override string Language => LanguageNames.CSharp;
 
-        public override bool IsCaseSensitive
-        {
-            get
-            {
-                return true;
-            }
-        }
+        public override bool IsCaseSensitive => true;
 
         /// <summary>
         /// The options the compilation was created with. 
         /// </summary>
-        public new CSharpCompilationOptions Options
-        {
-            get
-            {
-                return _options;
-            }
-        }
+        public new CSharpCompilationOptions Options => _options;
 
-        internal AnonymousTypeManager AnonymousTypeManager
-        {
-            get
-            {
-                return _anonymousTypeManager;
-            }
-        }
+        internal AnonymousTypeManager AnonymousTypeManager => _anonymousTypeManager;
 
-        internal override CommonAnonymousTypeManager CommonAnonymousTypeManager
-        {
-            get
-            {
-                return AnonymousTypeManager;
-            }
-        }
+        internal override CommonAnonymousTypeManager CommonAnonymousTypeManager => AnonymousTypeManager;
+
+        internal MethodGroupConversionCacheFrameManager MethodGroupConversionCacheFrameManager
+            => _methodGroupConversionCacheFrameManager;
+
+        internal override CommonMethodGroupConversionCacheFrameManager CommonMethodGroupConversionCacheFrameManager
+            => MethodGroupConversionCacheFrameManager;
 
         /// <summary>
         /// True when the compiler is run in "strict" mode, in which it enforces the language specification
@@ -296,6 +277,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             _previousSubmissionImports = new Lazy<Imports>(ExpandPreviousSubmissionImports);
             _globalNamespaceAlias = new Lazy<AliasSymbol>(CreateGlobalNamespaceAlias);
             _anonymousTypeManager = new AnonymousTypeManager(this);
+            _methodGroupConversionCacheFrameManager = new MethodGroupConversionCacheFrameManager(this);
             this.LanguageVersion = CommonLanguageVersion(syntaxAndDeclarations.ExternalSyntaxTrees);
 
             if (isSubmission)

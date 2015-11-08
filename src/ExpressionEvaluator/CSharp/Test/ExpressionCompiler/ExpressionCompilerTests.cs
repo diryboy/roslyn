@@ -4127,13 +4127,19 @@ class C
                 expr: "G(F)");
             testData.GetMethodData("<>x.<>m0").VerifyIL(
 @"{
-  // Code size       18 (0x12)
-  .maxstack  2
-  IL_0000:  ldnull
-  IL_0001:  ldftn      ""void C.F()""
-  IL_0007:  newobj     ""D..ctor(object, System.IntPtr)""
-  IL_000c:  call       ""void C.G(D)""
-  IL_0011:  ret
+ // Code size       33 (0x21)
+ .maxstack  2
+ IL_0000:  ldsfld     ""D <>q__MethodGroup0<D>.<F>r__Delegate""
+ IL_0005:  dup
+ IL_0006:  brtrue.s   IL_001b
+ IL_0008:  pop
+ IL_0009:  ldnull
+ IL_000a:  ldftn      ""void C.F()""
+ IL_0010:  newobj     ""D..ctor(object, System.IntPtr)""
+ IL_0015:  dup
+ IL_0016:  stsfld     ""D <>q__MethodGroup0<D>.<F>r__Delegate""
+ IL_001b:  call       ""void C.G(D)""
+ IL_0020:  ret
 }");
         }
 

@@ -54,15 +54,32 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return MakeMethodScopedSynthesizedName(GeneratedNameKind.LambdaDisplayClass, methodOrdinal, generation, suffix: "DisplayClass", entityOrdinal: closureOrdinal, entityGeneration: closureGeneration, isTypeName: true);
         }
 
-        internal static string MakeAnonymousTypeTemplateName(int index, int submissionSlotIndex, string moduleId)
+        private static string MakeTopLevelTypeName(string typePostfix, int index, int submissionSlotIndex, string moduleId)
         {
-            var name = "<" + moduleId + ">f__AnonymousType" + StringExtensions.GetNumeral(index);
-            if (submissionSlotIndex >= 0)
+            var name = "<" + moduleId + typePostfix + StringExtensions.GetNumeral(index);
+            if (submissionSlotIndex > 0)
             {
                 name += "#" + StringExtensions.GetNumeral(submissionSlotIndex);
             }
-
             return name;
+        }
+
+        internal static string MakeMethodGroupConversionCacheFrameName(int index, int submissionSlotIndex, string moduleId)
+        {
+            Debug.Assert((char)GeneratedNameKind.MethodGroupConversionCacheFrame == 'q');
+
+            return MakeTopLevelTypeName(">q__MethodGroup", index, submissionSlotIndex, moduleId);
+        }
+
+        internal static string MakeMethodGroupConversionCacheDelegateFieldName(string methodName)
+        {
+            Debug.Assert((char)GeneratedNameKind.MethodGroupConversionCacheDelegateField == 'r');
+            return "<" + methodName + ">r__Delegate";
+        }
+
+        internal static string MakeAnonymousTypeTemplateName(int index, int submissionSlotIndex, string moduleId)
+        {
+            return MakeTopLevelTypeName(">f__AnonymousType", index, submissionSlotIndex, moduleId);
         }
 
         internal const string AnonymousNamePrefix = "<>f__AnonymousType";

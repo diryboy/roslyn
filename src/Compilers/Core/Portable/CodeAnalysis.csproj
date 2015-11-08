@@ -39,7 +39,7 @@
     <NoWarn>1591</NoWarn>
     <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
-  </PropertyGroup>
+  </PropertyGroup>  
   <ItemGroup>
     <Content Include="$(NuGetPackageRoot)\Microsoft.DiaSymReader.Native\$(MicrosoftDiaSymReaderNativeVersion)\runtimes\win\native\Microsoft.DiaSymReader.Native.x86.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -73,6 +73,7 @@
     <Compile Include="InternalUtilities\StreamExtensions.cs" />
     <Compile Include="RealParser.cs" />
     <Compile Include="ReferenceManager\MergedAliases.cs" />
+    <Compile Include="Symbols\MethodGroupConversionCaches\CommonMethodGroupConversionCacheFrameManager.cs" />
     <Compile Include="StrongName\CryptoBlobParser.cs" />
     <Compile Include="Syntax\ICompilationUnitSyntax.cs" />
     <Compile Include="Syntax\ISkippedTokensTriviaSyntax.cs" />

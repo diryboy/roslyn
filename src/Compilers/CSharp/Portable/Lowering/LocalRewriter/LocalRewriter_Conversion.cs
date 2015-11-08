@@ -307,6 +307,20 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                     break;
 
+                case ConversionKind.MethodGroup:
+
+                    if (_inExpressionLambda || explicitCastInCode || (object)symbolOpt == null || !symbolOpt.IsStatic || symbolOpt.MethodKind != MethodKind.Ordinary)
+                    {
+                        break;
+                    }
+                    if (symbolOpt.IsExtensionMethod && ((BoundMethodGroup)rewrittenOperand).ReceiverOpt.Kind != BoundKind.TypeExpression)
+                    {
+                        break;
+                    }
+
+                    return RewriteMethodGroupConversion(oldNode, syntax, rewrittenOperand, symbolOpt, isExtensionMethod, rewrittenType);
+
+
                 case ConversionKind.ImplicitDynamic:
                 case ConversionKind.ExplicitDynamic:
                     Debug.Assert((object)symbolOpt == null);
@@ -1295,6 +1309,30 @@ namespace Microsoft.CodeAnalysis.CSharp
                 Debug.Assert(method.ReturnType == toType);
                 return BoundCall.Synthesized(syntax, null, method, operand);
             }
+        }
+
+        private BoundExpression RewriteMethodGroupConversion(BoundConversion oldNode, CSharpSyntaxNode syntax, BoundExpression operand, MethodSymbol targetMethod, bool isExtensionMethod, TypeSymbol type)
+        {
+            Debug.Assert((object)targetMethod != null);
+            Debug.Assert(type is NamedTypeSymbol);
+
+            var targetMethodDefinition = targetMethod.OriginalDefinition;
+            var cacheFrame = _methodGroupConversionCacheFrameManager.ObtainCacheFrame(targetMethodDefinition);
+            var typeArguments = MethodGroupConversionCacheFrame.GetTypeArgumentsFromConversion(type, targetMethod);
+
+            var orgSyntax = _factory.Syntax;
+            _factory.Syntax = syntax;
+
+            var boundCacheField = _factory.Field(null, cacheFrame.DelegateField.AsMember(cacheFrame.Construct(typeArguments)));
+            var boundDelegateCreation = new BoundDelegateCreationExpression(syntax, operand, targetMethod, isExtensionMethod, type)
+            {
+                WasCompilerGenerated = true
+            };
+
+            var rewrittenNode = _factory.Coalesce(boundCacheField, _factory.AssignmentExpression(boundCacheField, boundDelegateCreation));
+            _factory.Syntax = orgSyntax;
+
+            return rewrittenNode;
         }
 
         private Conversion MakeConversion(CSharpSyntaxNode syntax, Conversion conversion, TypeSymbol fromType, TypeSymbol toType)
