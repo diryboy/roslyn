@@ -68,13 +68,13 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             Debug.Assert((char)GeneratedNameKind.MethodGroupConversionCacheFrame == 'q');
 
-            return MakeTopLevelTypeName(">q__MethodGroup", index, submissionSlotIndex, moduleId);
+            return MakeTopLevelTypeName(">q__", index, submissionSlotIndex, moduleId);
         }
 
         internal static string MakeMethodGroupConversionCacheDelegateFieldName(string methodName)
         {
             Debug.Assert((char)GeneratedNameKind.MethodGroupConversionCacheDelegateField == 'r');
-            return "<" + methodName + ">r__Delegate";
+            return "<" + methodName + ">r";
         }
 
         internal static string MakeAnonymousTypeTemplateName(int index, int submissionSlotIndex, string moduleId)
