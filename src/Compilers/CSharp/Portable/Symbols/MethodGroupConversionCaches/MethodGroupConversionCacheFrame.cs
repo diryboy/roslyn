@@ -70,7 +70,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
             _builtTypeParameters = typeParamsBuilder.ToImmutableAndFree();
 
-            var fieldType = TypeParameters[TypeParameters.Length - 1];
+            var fieldType = TypeParameters[0];
             var fieldName = GeneratedNames.MakeMethodGroupConversionCacheDelegateFieldName(targetMethod.Name);
             DelegateField = new SynthesizedFieldSymbol(this, fieldType, fieldName, isPublic: true, isStatic: true);
         }
