@@ -13,14 +13,14 @@ using Roslyn.Utilities;
 namespace Microsoft.CodeAnalysis.CSharp.Symbols
 {
     /// <summary>
-    /// This class holds ALL types of delegates that are coverted from ONE target method
+    /// This class holds ALL types of delegates that are converted from ONE target method
     /// Type parameters are generated for: <see cref="GetTypeArgumentsFromConversion(TypeSymbol, MethodSymbol)"/>
     ///     1. All type parameters from the containing types of the target method
     ///     2. All type parameters from the target method
     ///     3. The delegate type
     /// </summary>
     /// <remarks>
-    /// This symbol is created in lowering phrase, and is collected and translated in emit phrase.
+    /// This symbol is created while lowering, and is collected and assigned name and index before emit.
     /// </remarks>
     internal sealed class MethodGroupConversionCacheFrame : NamedTypeSymbol
     {
@@ -34,21 +34,24 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         public override TypeKind TypeKind => TypeKind.Class;
 
-        private readonly int TypeParametersCount;
-        public override int Arity => TypeParametersCount;
+        private readonly int _typeParametersCount;
+        public override int Arity => _typeParametersCount;
 
         public readonly SynthesizedFieldSymbol DelegateField;
 
-        private string _name = null;
+        private string _name;
         public override string Name => _name;
 
         private int _index = -1;
         public int Index => _index;
 
+        /// <summary>
+        /// This is used to deterministically sort the collected frames before emit, as the frame is at top level.
+        /// </summary>
         public string SortKey { get; }
 
-        private readonly ImmutableArray<TypeParameterSymbol> BuiltTypeParameters;
-        public override ImmutableArray<TypeParameterSymbol> TypeParameters => BuiltTypeParameters;
+        private readonly ImmutableArray<TypeParameterSymbol> _builtTypeParameters;
+        public override ImmutableArray<TypeParameterSymbol> TypeParameters => _builtTypeParameters;
 
         private MethodGroupConversionCacheFrame(
                 MethodGroupConversionCacheFrameManager manager,
@@ -58,14 +61,14 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             Manager = manager;
             SortKey = SymbolDisplay.ToDisplayString(targetMethod, SymbolDisplayFormat.FullyQualifiedFormat);
 
-            TypeParametersCount = arity;
+            _typeParametersCount = arity;
 
             var typeParamsBuilder = ArrayBuilder<TypeParameterSymbol>.GetInstance();
             for ( int i = 0; i < arity; i++ )
             {
                 typeParamsBuilder.Add(new MethodGroupConversionCacheFrameTypeParameter(this, i));
             }
-            BuiltTypeParameters = typeParamsBuilder.ToImmutableAndFree();
+            _builtTypeParameters = typeParamsBuilder.ToImmutableAndFree();
 
             var fieldType = TypeParameters[TypeParameters.Length - 1];
             var fieldName = GeneratedNames.MakeMethodGroupConversionCacheDelegateFieldName(targetMethod.Name);
@@ -78,6 +81,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// <remarks>This method is only intended to be called from <see cref="MethodGroupConversionCacheFrameManager"/></remarks>
         internal void AssignNameAndIndex(string name, int index)
         {
+            Debug.Assert(_name == null && name != null, "AssignNameAndIndex should only be done once.");
+
             _name = name;
             _index = index;
         }
@@ -97,7 +102,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             arity += targetMethod.Arity;
 
-            for (var containingType = targetMethod.ContainingType; containingType!= null; containingType = containingType.ContainingType)
+            for (var containingType = targetMethod.ContainingType; (object)containingType != null; containingType = containingType.ContainingType)
             {
                 arity += containingType.Arity;
             }
@@ -113,8 +118,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             if (targetMethod.Arity > 0)
             {
-                var args = ((ConstructedMethodSymbol)targetMethod).TypeArguments;
-                AddTypeArgumentsReversed(typeArgumentsBuilder, ref args);
+                var args = targetMethod.TypeArguments;
+                typeArgumentsBuilder.AddRange(args);
             }
 
             for (var containingType = targetMethod.ContainingType; containingType != null; containingType = containingType.ContainingType)
@@ -122,31 +127,17 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 if (containingType.Arity > 0)
                 {
                     var args = containingType.TypeArguments;
-                    AddTypeArgumentsReversed(typeArgumentsBuilder, ref args);
+                    typeArgumentsBuilder.AddRange(args);
                 }
             }
 
-            typeArgumentsBuilder.ReverseContents();
             return typeArgumentsBuilder.ToImmutableAndFree();
-        }
-
-        private static void AddTypeArgumentsReversed(ArrayBuilder<TypeSymbol> builder, ref ImmutableArray<TypeSymbol> args)
-        {
-            var i = args.Length;
-            while (i-- > 0)
-            {
-                builder.Add(args[i]);
-            }
         }
 
         public override ImmutableArray<Symbol> GetMembers()
         {
-            if ( DelegateField != null )
-            {
-                return ImmutableArray.Create<Symbol>(DelegateField);
-            }
-
-            return ImmutableArray<Symbol>.Empty;
+            Debug.Assert((object)DelegateField != null);
+            return ImmutableArray.Create<Symbol>(DelegateField);
         }
 
         internal override void AddSynthesizedAttributes(ModuleCompilationState compilationState, ref ArrayBuilder<SynthesizedAttributeData> attributes)
@@ -226,11 +217,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         internal override ImmutableArray<NamedTypeSymbol> GetDeclaredInterfaces(ConsList<Symbol> basesBeingResolved)
             => ImmutableArray<NamedTypeSymbol>.Empty;
 
-        internal override IEnumerable<SecurityAttribute> GetSecurityInformation() { yield break; }
+        internal override IEnumerable<SecurityAttribute> GetSecurityInformation() => SpecializedCollections.EmptyEnumerable<SecurityAttribute>();
 
         internal override ImmutableArray<string> GetAppliedConditionalSymbols() => ImmutableArray<string>.Empty;
 
-        internal override IEnumerable<FieldSymbol> GetFieldsToEmit() { yield return DelegateField; }
+        internal override IEnumerable<FieldSymbol> GetFieldsToEmit() => SpecializedCollections.SingletonCollection(DelegateField);
 
         internal override ImmutableArray<NamedTypeSymbol> GetInterfacesToEmit() => ImmutableArray<NamedTypeSymbol>.Empty;
 

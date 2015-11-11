@@ -54,21 +54,32 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return MakeMethodScopedSynthesizedName(GeneratedNameKind.LambdaDisplayClass, methodOrdinal, generation, suffix: "DisplayClass", entityOrdinal: closureOrdinal, entityGeneration: closureGeneration, isTypeName: true);
         }
 
-        private static string MakeTopLevelTypeName(string typePostfix, int index, int submissionSlotIndex, string moduleId)
+        private static string MakeTopLevelTypeName(string nameKind, string suffix, int index, int submissionSlotIndex, string moduleId)
         {
-            var name = "<" + moduleId + typePostfix + StringExtensions.GetNumeral(index);
+            Debug.Assert(!String.IsNullOrWhiteSpace(nameKind));
+
+            var result = PooledStringBuilder.GetInstance();
+            var builder = result.Builder;
+
+            builder.Append("<").Append(moduleId).Append(">").Append(nameKind).Append("__");
+            if (suffix != null)
+            {
+                builder.Append(suffix);
+            }
+            builder.Append(StringExtensions.GetNumeral(index));
             if (submissionSlotIndex > 0)
             {
-                name += "#" + StringExtensions.GetNumeral(submissionSlotIndex);
+                builder.Append("#").Append(StringExtensions.GetNumeral(submissionSlotIndex));
             }
-            return name;
+
+            return result.ToStringAndFree();
         }
 
         internal static string MakeMethodGroupConversionCacheFrameName(int index, int submissionSlotIndex, string moduleId)
         {
             Debug.Assert((char)GeneratedNameKind.MethodGroupConversionCacheFrame == 'q');
 
-            return MakeTopLevelTypeName(">q__", index, submissionSlotIndex, moduleId);
+            return MakeTopLevelTypeName("q", null, index, submissionSlotIndex, moduleId);
         }
 
         internal static string MakeMethodGroupConversionCacheDelegateFieldName(string methodName)
@@ -79,7 +90,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         internal static string MakeAnonymousTypeTemplateName(int index, int submissionSlotIndex, string moduleId)
         {
-            return MakeTopLevelTypeName(">f__AnonymousType", index, submissionSlotIndex, moduleId);
+            Debug.Assert((char)GeneratedNameKind.AnonymousType == 'f');
+            return MakeTopLevelTypeName("f", "AnonymousType", index, submissionSlotIndex, moduleId);
         }
 
         internal const string AnonymousNamePrefix = "<>f__AnonymousType";

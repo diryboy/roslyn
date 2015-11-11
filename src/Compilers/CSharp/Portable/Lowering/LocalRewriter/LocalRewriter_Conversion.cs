@@ -313,7 +313,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     {
                         break;
                     }
-                    if (symbolOpt.IsExtensionMethod && ((BoundMethodGroup)rewrittenOperand).ReceiverOpt.Kind != BoundKind.TypeExpression)
+                    if (symbolOpt.IsExtensionMethod && ((BoundMethodGroup)rewrittenOperand).InstanceOpt != null)
                     {
                         break;
                     }
@@ -1314,7 +1314,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private BoundExpression RewriteMethodGroupConversion(BoundConversion oldNode, CSharpSyntaxNode syntax, BoundExpression operand, MethodSymbol targetMethod, bool isExtensionMethod, TypeSymbol type)
         {
             Debug.Assert((object)targetMethod != null);
-            Debug.Assert(type is NamedTypeSymbol);
+            Debug.Assert(type.IsDelegateType());
 
             var targetMethodDefinition = targetMethod.OriginalDefinition;
             var cacheFrame = _methodGroupConversionCacheFrameManager.ObtainCacheFrame(targetMethodDefinition);
