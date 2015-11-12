@@ -10,7 +10,7 @@ Imports Microsoft.CodeAnalysis
 
 Namespace Microsoft.CodeAnalysis.VisualBasic.Symbols
 
-    Friend Class MethodGroupConversionCacheFrame
+    Friend Class DelegateCacheContainer
         Inherits NamedTypeSymbol
 
         Public Overrides ReadOnly Property Arity As Integer

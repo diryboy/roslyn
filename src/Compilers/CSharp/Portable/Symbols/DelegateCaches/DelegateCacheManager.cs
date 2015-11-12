@@ -12,54 +12,52 @@ using Microsoft.CodeAnalysis.Symbols;
 
 namespace Microsoft.CodeAnalysis.CSharp.Symbols
 {
-    using ConcurrentFramesDictionary = ConcurrentDictionary<MethodSymbol, MethodGroupConversionCacheFrame>;
-
-    internal sealed class MethodGroupConversionCacheFrameManager : CommonMethodGroupConversionCacheFrameManager, IComparer<MethodGroupConversionCacheFrame>
+    internal sealed class DelegateCacheManager : CommonDelegateCacheManager, IComparer<DelegateCacheContainer>
     {
         internal CSharpCompilation Compilation { get; }
 
-        private ConcurrentFramesDictionary _lazyFrames;
+        private ConcurrentDictionary<MethodSymbol, DelegateCacheContainer> _lazyContainers;
 
-        private ConcurrentFramesDictionary Frames
+        private ConcurrentDictionary<MethodSymbol, DelegateCacheContainer> Containers
         {
             get
             {
-                if (_lazyFrames == null)
+                if (_lazyContainers == null)
                 {
                     for (var previousSubmission = Compilation.PreviousSubmission; previousSubmission != null; previousSubmission = previousSubmission.PreviousSubmission)
                     {
-                        var previousFrames = previousSubmission.MethodGroupConversionCacheFrameManager._lazyFrames;
+                        var previousFrames = previousSubmission.DelegateCacheManager._lazyContainers;
 
                         if (previousFrames != null)
                         {
-                            Interlocked.CompareExchange(ref _lazyFrames, new ConcurrentFramesDictionary(previousFrames), null);
-                            return _lazyFrames;
+                            Interlocked.CompareExchange(ref _lazyContainers, new ConcurrentDictionary<MethodSymbol, DelegateCacheContainer>(previousFrames), null);
+                            return _lazyContainers;
                         }
                     }
 
-                    Interlocked.CompareExchange(ref _lazyFrames, new ConcurrentFramesDictionary(), null);
+                    Interlocked.CompareExchange(ref _lazyContainers, new ConcurrentDictionary<MethodSymbol, DelegateCacheContainer>(), null);
                 }
 
-                return _lazyFrames;
+                return _lazyContainers;
             }
         }
 
-        internal MethodGroupConversionCacheFrameManager(CSharpCompilation compilation)
+        internal DelegateCacheManager(CSharpCompilation compilation)
         {
             Compilation = compilation;
         }
 
-        public MethodGroupConversionCacheFrame ObtainCacheFrame(MethodSymbol targetMethod)
+        public DelegateCacheContainer ObtainCacheContainer(MethodSymbol targetMethod)
         {
-            return Frames.GetOrAdd(targetMethod, method => MethodGroupConversionCacheFrame.Create(this, method));
+            return Containers.GetOrAdd(targetMethod, method => DelegateCacheContainer.Create(this, method));
         }
 
         /// <remarks>The order should be fixed.</remarks>
-        internal ImmutableArray<MethodGroupConversionCacheFrame> GetAllCreatedFrames()
+        internal ImmutableArray<DelegateCacheContainer> GetAllCreatedContainers()
         {
-            var builder = ArrayBuilder<MethodGroupConversionCacheFrame>.GetInstance();
+            var builder = ArrayBuilder<DelegateCacheContainer>.GetInstance();
 
-            foreach (var frame in Frames.Values)
+            foreach (var frame in Containers.Values)
             {
                 if (ReferenceEquals(frame.Manager, this))
                 {
@@ -72,19 +70,19 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return builder.ToImmutableAndFree();
         }
 
-        public int Compare(MethodGroupConversionCacheFrame x, MethodGroupConversionCacheFrame y)
+        public int Compare(DelegateCacheContainer x, DelegateCacheContainer y)
         {
             return String.CompareOrdinal(x.SortKey, y.SortKey);
         }
 
         /// <summary>
-        /// Resets numbering in frame names.
+        /// Resets numbering in container names?
         /// </summary>
-        internal void AssignFrameNames(PEModuleBuilder moduleBuilder, DiagnosticBag diagnostics)
+        internal void AssignContainerNames(PEModuleBuilder moduleBuilder, DiagnosticBag diagnostics)
         {
             foreach (var previousTarget in moduleBuilder.GetPreviousMethodGroupConversionTargets())
             {
-                Frames.GetOrAdd(previousTarget, method => MethodGroupConversionCacheFrame.Create(this, method));
+                Containers.GetOrAdd(previousTarget, method => DelegateCacheContainer.Create(this, method));
             }
 
             string moduleId;
@@ -107,15 +105,15 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 moduleId = string.Empty;
             }
 
-            var nextIndex = moduleBuilder.GetNextMethodGroupConversionCacheFrameIndex();
-            foreach (var frame in GetAllCreatedFrames())
+            var nextIndex = moduleBuilder.GetNextDelegateCacheContainerIndex();
+            foreach (var frame in GetAllCreatedContainers())
             {
                 string name;
                 int index;
-                if (!moduleBuilder.TryGetMethodGroupConversionCacheFrameName(frame, out name, out index))
+                if (!moduleBuilder.TryGetDelegateCacheContainerName(frame, out name, out index))
                 {
                     index = nextIndex++;
-                    name = GeneratedNames.MakeMethodGroupConversionCacheFrameName(index, Compilation.GetSubmissionSlotIndex(), moduleId);
+                    name = GeneratedNames.MakeDelegateCacheContainerName(index, Compilation.GetSubmissionSlotIndex(), moduleId);
                 }
 
                 frame.AssignNameAndIndex(name, index);

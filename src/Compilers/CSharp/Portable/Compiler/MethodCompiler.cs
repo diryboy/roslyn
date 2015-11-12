@@ -145,7 +145,7 @@ namespace Microsoft.CodeAnalysis.CSharp
                     methodCompiler.CompileSynthesizedMethods(additionalTypes, diagnostics);
                 }
 
-                compilation.MethodGroupConversionCacheFrameManager.AssignFrameNames(moduleBeingBuiltOpt, diagnostics);
+                compilation.DelegateCacheManager.AssignContainerNames(moduleBeingBuiltOpt, diagnostics);
 
                 // By this time we have processed all types reachable from module's global namespace
                 compilation.AnonymousTypeManager.AssignTemplatesNamesAndCompile(methodCompiler, moduleBeingBuiltOpt, diagnostics);

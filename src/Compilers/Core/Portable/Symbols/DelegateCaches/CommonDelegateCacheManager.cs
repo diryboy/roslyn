@@ -2,7 +2,7 @@
 
 namespace Microsoft.CodeAnalysis.Symbols
 {
-    internal abstract class CommonMethodGroupConversionCacheFrameManager
+    internal abstract class CommonDelegateCacheManager
     {
     }
 }

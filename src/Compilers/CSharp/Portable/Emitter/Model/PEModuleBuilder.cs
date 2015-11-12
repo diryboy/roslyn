@@ -347,18 +347,28 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             return ImmutableArray<MethodSymbol>.Empty;
         }
 
-        internal virtual int GetNextMethodGroupConversionCacheFrameIndex()
+        internal virtual int GetNextDelegateCacheContainerIndex()
         {
             return 0;
         }
 
-        internal virtual bool TryGetMethodGroupConversionCacheFrameName(NamedTypeSymbol frame, out string name, out int index)
+        internal virtual bool TryGetDelegateCacheContainerName(NamedTypeSymbol container, out string name, out int index)
         {
-            Debug.Assert(Compilation == frame.DeclaringCompilation);
+            Debug.Assert(Compilation == container.DeclaringCompilation);
 
             name = null;
             index = -1;
             return false;
+        }
+
+        internal override ImmutableArray<Cci.INamespaceTypeDefinition> GetDelegateCacheContainers()
+        {
+            if (EmitOptions.EmitMetadataOnly)
+            {
+                return ImmutableArray<Cci.INamespaceTypeDefinition>.Empty;
+            }
+
+            return StaticCast<Cci.INamespaceTypeDefinition>.From(Compilation.DelegateCacheManager.GetAllCreatedContainers());
         }
 
         internal virtual ImmutableArray<AnonymousTypeKey> GetPreviousAnonymousTypes()
@@ -388,16 +398,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             }
 
             return StaticCast<Cci.INamespaceTypeDefinition>.From(Compilation.AnonymousTypeManager.GetAllCreatedTemplates());
-        }
-
-        internal override ImmutableArray<Cci.INamespaceTypeDefinition> GetMethodGroupConversionCacheFrames()
-        {
-            if (EmitOptions.EmitMetadataOnly)
-            {
-                return ImmutableArray<Cci.INamespaceTypeDefinition>.Empty;
-            }
-
-            return StaticCast<Cci.INamespaceTypeDefinition>.From(Compilation.MethodGroupConversionCacheFrameManager.GetAllCreatedFrames());
         }
 
         /// <summary>

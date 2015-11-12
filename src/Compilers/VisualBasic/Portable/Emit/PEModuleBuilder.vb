@@ -335,13 +335,13 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Emit
             Return False
         End Function
 
-        Friend Overrides Function GetMethodGroupConversionCacheFrames() As ImmutableArray(Of Cci.INamespaceTypeDefinition)
+        Friend Overrides Function GetDelegateCacheContainers() As ImmutableArray(Of Cci.INamespaceTypeDefinition)
             If EmitOptions.EmitMetadataOnly Then
                 Return ImmutableArray(Of Cci.INamespaceTypeDefinition).Empty
             End If
 
             Return StaticCast(Of Cci.INamespaceTypeDefinition).
-                From(SourceModule.ContainingSourceAssembly.DeclaringCompilation.MethodGroupConversionCacheFrameManager.GetAllCreatedFrames())
+                From(SourceModule.ContainingSourceAssembly.DeclaringCompilation.DelegateCacheManager.GetAllCreatedContainers())
         End Function
 
         Friend Overridable Function GetPreviousAnonymousTypes() As ImmutableArray(Of AnonymousTypeKey)

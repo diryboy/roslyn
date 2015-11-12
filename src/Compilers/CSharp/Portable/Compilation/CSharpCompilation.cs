@@ -81,7 +81,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// <summary>
         /// Manages cache frames created for implicit method group conversion from static methods.
         /// </summary>
-        private readonly MethodGroupConversionCacheFrameManager _methodGroupConversionCacheFrameManager;
+        private readonly DelegateCacheManager _delegateCacheManager;
 
         private NamespaceSymbol _lazyGlobalNamespace;
 
@@ -129,11 +129,11 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         internal override CommonAnonymousTypeManager CommonAnonymousTypeManager => AnonymousTypeManager;
 
-        internal MethodGroupConversionCacheFrameManager MethodGroupConversionCacheFrameManager
-            => _methodGroupConversionCacheFrameManager;
+        internal DelegateCacheManager DelegateCacheManager
+            => _delegateCacheManager;
 
-        internal override CommonMethodGroupConversionCacheFrameManager CommonMethodGroupConversionCacheFrameManager
-            => MethodGroupConversionCacheFrameManager;
+        internal override CommonDelegateCacheManager CommonDelegateCacheManager
+            => DelegateCacheManager;
 
         /// <summary>
         /// True when the compiler is run in "strict" mode, in which it enforces the language specification
@@ -277,7 +277,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             _previousSubmissionImports = new Lazy<Imports>(ExpandPreviousSubmissionImports);
             _globalNamespaceAlias = new Lazy<AliasSymbol>(CreateGlobalNamespaceAlias);
             _anonymousTypeManager = new AnonymousTypeManager(this);
-            _methodGroupConversionCacheFrameManager = new MethodGroupConversionCacheFrameManager(this);
+            _delegateCacheManager = new DelegateCacheManager(this);
             this.LanguageVersion = CommonLanguageVersion(syntaxAndDeclarations.ExternalSyntaxTrees);
 
             if (isSubmission)

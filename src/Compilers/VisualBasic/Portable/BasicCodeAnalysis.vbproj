@@ -680,9 +680,9 @@
     <Compile Include="Symbols\Metadata\PE\PETypeParameterSymbol.vb" />
     <Compile Include="Symbols\MetadataOrSourceAssemblySymbol.vb" />
     <Compile Include="Symbols\Metadata\PE\SymbolFactory.vb" />
-    <Compile Include="Symbols\MethodGroupConversionCaches\MethodGroupConversionCacheFrame.vb" />
-    <Compile Include="Symbols\MethodGroupConversionCaches\MethodGroupConversionCacheFrameManager.vb" />
-    <Compile Include="Symbols\MethodGroupConversionCaches\MethodGroupConversionCacheFrameTypeParameter.vb" />
+    <Compile Include="Symbols\DelegateCaches\DelegateCacheContainer.vb" />
+    <Compile Include="Symbols\DelegateCaches\DelegateCacheManager.vb" />
+    <Compile Include="Symbols\DelegateCaches\DelegateCacheContainerTypeParameter.vb" />
     <Compile Include="Symbols\MethodKindExtensions.vb" />
     <Compile Include="Symbols\MethodSignatureComparer.vb" />
     <Compile Include="Symbols\MethodSymbol.vb" />

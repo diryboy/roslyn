@@ -17,7 +17,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private readonly SynthesizedSubmissionFields _previousSubmissionFields;
         private readonly bool _allowOmissionOfConditionalCalls;
         private readonly LoweredDynamicOperationFactory _dynamicFactory;
-        private readonly MethodGroupConversionCacheFrameManager _methodGroupConversionCacheFrameManager;
+        private readonly DelegateCacheManager _delegateCacheManager;
 
         private bool _sawLambdas;
         private bool _inExpressionLambda;
@@ -41,7 +41,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             _factory.CurrentMethod = containingMethod;
             Debug.Assert(factory.CurrentType == (containingType ?? containingMethod.ContainingType));
             _dynamicFactory = new LoweredDynamicOperationFactory(factory, containingMethodOrdinal);
-            _methodGroupConversionCacheFrameManager = compilation.MethodGroupConversionCacheFrameManager;
+            _delegateCacheManager = compilation.DelegateCacheManager;
             _previousSubmissionFields = previousSubmissionFields;
             _allowOmissionOfConditionalCalls = allowOmissionOfConditionalCalls;
             _diagnostics = diagnostics;

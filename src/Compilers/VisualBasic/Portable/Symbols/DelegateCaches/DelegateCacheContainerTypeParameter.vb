@@ -9,7 +9,7 @@ Imports Microsoft.CodeAnalysis
 
 Namespace Microsoft.CodeAnalysis.VisualBasic.Symbols
 
-    Friend Class MethodGroupConversionCacheFrameTypeParameter
+    Friend Class DelegateCacheContainerTypeParameter
         Inherits TypeParameterSymbol
 
         Public Overrides ReadOnly Property ContainingSymbol As Symbol

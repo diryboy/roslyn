@@ -22,9 +22,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
     /// <remarks>
     /// This symbol is created while lowering, and is collected and assigned name and index before emit.
     /// </remarks>
-    internal sealed class MethodGroupConversionCacheFrame : NamedTypeSymbol
+    internal sealed class DelegateCacheContainer : NamedTypeSymbol
     {
-        internal readonly MethodGroupConversionCacheFrameManager Manager;
+        internal readonly DelegateCacheManager Manager;
 
         public override Symbol ContainingSymbol => Manager.Compilation.SourceModule.GlobalNamespace;
 
@@ -46,15 +46,15 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         public int Index => _index;
 
         /// <summary>
-        /// This is used to deterministically sort the collected frames before emit, as the frame is at top level.
+        /// This is used to deterministically sort the collected containers before emit, as they are at top level.
         /// </summary>
         public string SortKey { get; }
 
         private readonly ImmutableArray<TypeParameterSymbol> _builtTypeParameters;
         public override ImmutableArray<TypeParameterSymbol> TypeParameters => _builtTypeParameters;
 
-        private MethodGroupConversionCacheFrame(
-                MethodGroupConversionCacheFrameManager manager,
+        private DelegateCacheContainer(
+                DelegateCacheManager manager,
                 MethodSymbol targetMethod,
                 int arity)
         {
@@ -66,19 +66,19 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             var typeParamsBuilder = ArrayBuilder<TypeParameterSymbol>.GetInstance();
             for ( int i = 0; i < arity; i++ )
             {
-                typeParamsBuilder.Add(new MethodGroupConversionCacheFrameTypeParameter(this, i));
+                typeParamsBuilder.Add(new DelegateCacheContainerTypeParameter(this, i));
             }
             _builtTypeParameters = typeParamsBuilder.ToImmutableAndFree();
 
             var fieldType = TypeParameters[0];
-            var fieldName = GeneratedNames.MakeMethodGroupConversionCacheDelegateFieldName(targetMethod.Name);
+            var fieldName = GeneratedNames.MakeDelegateCacheContainerFieldName(targetMethod.Name);
             DelegateField = new SynthesizedFieldSymbol(this, fieldType, fieldName, isPublic: true, isStatic: true);
         }
 
         /// <summary>
         /// Assign the name and index to be serialized in the module.
         /// </summary>
-        /// <remarks>This method is only intended to be called from <see cref="MethodGroupConversionCacheFrameManager"/></remarks>
+        /// <remarks>This method is only intended to be called from <see cref="DelegateCacheManager"/></remarks>
         internal void AssignNameAndIndex(string name, int index)
         {
             Debug.Assert(_name == null && name != null, "AssignNameAndIndex should only be done once.");
@@ -87,13 +87,13 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             _index = index;
         }
 
-        /// <remarks>This method is only intended to be called from <see cref="MethodGroupConversionCacheFrameManager"/></remarks>
-        internal static MethodGroupConversionCacheFrame Create(MethodGroupConversionCacheFrameManager manager, MethodSymbol targetMethod)
+        /// <remarks>This method is only intended to be called from <see cref="DelegateCacheManager"/></remarks>
+        internal static DelegateCacheContainer Create(DelegateCacheManager manager, MethodSymbol targetMethod)
         {
             Debug.Assert(manager != null);
             Debug.Assert(targetMethod.IsDefinition);
 
-            return new MethodGroupConversionCacheFrame(manager, targetMethod, CalculateNeededArity(targetMethod));
+            return new DelegateCacheContainer(manager, targetMethod, CalculateNeededArity(targetMethod));
         }
 
         private static int CalculateNeededArity(MethodSymbol targetMethod)

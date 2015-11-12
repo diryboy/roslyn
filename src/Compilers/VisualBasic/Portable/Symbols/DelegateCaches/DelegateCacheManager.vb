@@ -11,18 +11,18 @@ Imports Microsoft.CodeAnalysis.Symbols
 
 Namespace Microsoft.CodeAnalysis.VisualBasic.Symbols
 
-    Friend Class MethodGroupConversionCacheFrameManager
-        Inherits CommonMethodGroupConversionCacheFrameManager
+    Friend Class DelegateCacheManager
+        Inherits CommonDelegateCacheManager
 
         Public Sub New(compilation As VisualBasicCompilation)
             MyBase.New()
         End Sub
 
-        Friend Function GetAllCreatedFrames() As ImmutableArray(Of MethodGroupConversionCacheFrame)
-            Return ImmutableArray(Of MethodGroupConversionCacheFrame).Empty
+        Friend Function GetAllCreatedContainers() As ImmutableArray(Of DelegateCacheContainer)
+            Return ImmutableArray(Of DelegateCacheContainer).Empty
         End Function
 
-        Friend Sub AssignFrameNames(moduleBuilder As PEModuleBuilder, diagnostics As DiagnosticBag)
+        Friend Sub AssignContainerNames(moduleBuilder As PEModuleBuilder, diagnostics As DiagnosticBag)
 
         End Sub
 

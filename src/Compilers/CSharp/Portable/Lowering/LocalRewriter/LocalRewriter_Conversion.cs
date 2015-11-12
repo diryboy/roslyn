@@ -1317,13 +1317,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(type.IsDelegateType());
 
             var targetMethodDefinition = targetMethod.OriginalDefinition;
-            var cacheFrame = _methodGroupConversionCacheFrameManager.ObtainCacheFrame(targetMethodDefinition);
-            var typeArguments = MethodGroupConversionCacheFrame.GetTypeArgumentsFromConversion(type, targetMethod);
+            var cacheContainer = _delegateCacheManager.ObtainCacheContainer(targetMethodDefinition);
+            var typeArguments = DelegateCacheContainer.GetTypeArgumentsFromConversion(type, targetMethod);
 
             var orgSyntax = _factory.Syntax;
             _factory.Syntax = syntax;
 
-            var boundCacheField = _factory.Field(null, cacheFrame.DelegateField.AsMember(cacheFrame.Construct(typeArguments)));
+            var boundCacheField = _factory.Field(null, cacheContainer.DelegateField.AsMember(cacheContainer.Construct(typeArguments)));
             var boundDelegateCreation = new BoundDelegateCreationExpression(syntax, operand, targetMethod, isExtensionMethod, type)
             {
                 WasCompilerGenerated = true

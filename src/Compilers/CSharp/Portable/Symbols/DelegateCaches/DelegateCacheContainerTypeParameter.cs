@@ -12,22 +12,22 @@ using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.CSharp.Symbols
 {
-    internal sealed class MethodGroupConversionCacheFrameTypeParameter : TypeParameterSymbol
+    internal sealed class DelegateCacheContainerTypeParameter : TypeParameterSymbol
     {
         private readonly string _name;
         private readonly int _index;
-        private readonly Symbol Frame;
+        private readonly Symbol _container;
 
-        public MethodGroupConversionCacheFrameTypeParameter(MethodGroupConversionCacheFrame frame, int index)
+        public DelegateCacheContainerTypeParameter(DelegateCacheContainer container, int index)
         {
-            Frame = frame;
+            _container = container;
             _name = "T" + StringExtensions.GetNumeral(index);
             _index = index;
         }
 
         public override string Name => _name;
 
-        public override Symbol ContainingSymbol => Frame;
+        public override Symbol ContainingSymbol => _container;
 
         public override ImmutableArray<SyntaxReference> DeclaringSyntaxReferences => ImmutableArray<SyntaxReference>.Empty;
 

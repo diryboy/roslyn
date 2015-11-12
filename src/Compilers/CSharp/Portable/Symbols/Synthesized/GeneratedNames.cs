@@ -54,35 +54,34 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return MakeMethodScopedSynthesizedName(GeneratedNameKind.LambdaDisplayClass, methodOrdinal, generation, suffix: "DisplayClass", entityOrdinal: closureOrdinal, entityGeneration: closureGeneration, isTypeName: true);
         }
 
-        private static string MakeTopLevelTypeName(string nameKind, string suffix, int index, int submissionSlotIndex, string moduleId)
+        private static string MakeTopLevelTypeName(string nameKind, string suffix, int index, int variantIndex, string moduleId)
         {
             Debug.Assert(!String.IsNullOrWhiteSpace(nameKind));
 
             var result = PooledStringBuilder.GetInstance();
             var builder = result.Builder;
 
-            builder.Append("<").Append(moduleId).Append(">").Append(nameKind).Append("__");
+            builder.Append("<").Append(moduleId).Append(">").Append(nameKind).Append(SuffixSeparator);
             if (suffix != null)
             {
                 builder.Append(suffix);
             }
             builder.Append(StringExtensions.GetNumeral(index));
-            if (submissionSlotIndex > 0)
+            if (variantIndex > 0)
             {
-                builder.Append("#").Append(StringExtensions.GetNumeral(submissionSlotIndex));
+                builder.Append("#").Append(StringExtensions.GetNumeral(variantIndex));
             }
 
             return result.ToStringAndFree();
         }
 
-        internal static string MakeMethodGroupConversionCacheFrameName(int index, int submissionSlotIndex, string moduleId)
+        internal static string MakeDelegateCacheContainerName(int index, int generationOrdinal, string moduleId)
         {
             Debug.Assert((char)GeneratedNameKind.MethodGroupConversionCacheFrame == 'q');
-
-            return MakeTopLevelTypeName("q", null, index, submissionSlotIndex, moduleId);
+            return MakeTopLevelTypeName("q", null, index, generationOrdinal, moduleId);
         }
 
-        internal static string MakeMethodGroupConversionCacheDelegateFieldName(string methodName)
+        internal static string MakeDelegateCacheContainerFieldName(string methodName)
         {
             Debug.Assert((char)GeneratedNameKind.MethodGroupConversionCacheDelegateField == 'r');
             return "<" + methodName + ">r";
