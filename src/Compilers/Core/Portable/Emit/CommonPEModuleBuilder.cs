@@ -322,6 +322,34 @@ namespace Microsoft.CodeAnalysis.Emit
             return result.ToImmutableAndFree();
         }
 
+        /// <summary>
+        /// When emitting .NET module, an id can be included into a top level type's name to ensure uniqueness across added modules.
+        /// </summary>
+        internal string GetModuleIdForSynthesizedTopLevelTypes()
+        {
+            string moduleId;
+
+            if (OutputKind == OutputKind.NetModule)
+            {
+                moduleId = Name;
+
+                string extension = OutputKind.NetModule.GetDefaultExtension();
+
+                if (moduleId.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
+                {
+                    moduleId = moduleId.Substring(0, moduleId.Length - extension.Length);
+                }
+
+                moduleId = MetadataHelpers.MangleForTypeNameIfNeeded(moduleId);
+            }
+            else
+            {
+                moduleId = string.Empty;
+            }
+
+            return moduleId;
+        }
+
         #region Synthesized Members
 
         /// <summary>

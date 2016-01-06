@@ -79,7 +79,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private readonly AnonymousTypeManager _anonymousTypeManager;
 
         /// <summary>
-        /// Manages cache frames created for implicit method group conversion from static methods.
+        /// Manages cache containers of <see cref="DelegateCacheContainerKind.ModuleScopedConcrete"/> created for method group conversion from static methods.
         /// </summary>
         private readonly DelegateCacheManager _delegateCacheManager;
 
@@ -129,11 +129,9 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         internal override CommonAnonymousTypeManager CommonAnonymousTypeManager => AnonymousTypeManager;
 
-        internal DelegateCacheManager DelegateCacheManager
-            => _delegateCacheManager;
+        internal DelegateCacheManager DelegateCacheManager => _delegateCacheManager;
 
-        internal override CommonDelegateCacheManager CommonDelegateCacheManager
-            => DelegateCacheManager;
+        internal override CommonDelegateCacheManager CommonDelegateCacheManager => DelegateCacheManager;
 
         /// <summary>
         /// True when the compiler is run in "strict" mode, in which it enforces the language specification
@@ -277,7 +275,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             _previousSubmissionImports = new Lazy<Imports>(ExpandPreviousSubmissionImports);
             _globalNamespaceAlias = new Lazy<AliasSymbol>(CreateGlobalNamespaceAlias);
             _anonymousTypeManager = new AnonymousTypeManager(this);
-            _delegateCacheManager = new DelegateCacheManager(this);
+            _delegateCacheManager = new DelegateCacheManager();
             this.LanguageVersion = CommonLanguageVersion(syntaxAndDeclarations.ExternalSyntaxTrees);
 
             if (isSubmission)

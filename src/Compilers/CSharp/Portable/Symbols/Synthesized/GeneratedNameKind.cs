@@ -37,8 +37,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         AsyncBuilderField = 't',
         DynamicCallSiteContainerType = 'o',
         DynamicCallSiteField = 'p',
-        MethodGroupConversionCacheFrame = 'q',
-        MethodGroupConversionCacheDelegateField = 'r',
+        DelegateCacheContainer = 'v',
+        DelegateCacheContainerField = 'w',
 
         // Deprecated - emitted by Dev12, but not by Roslyn.
         // Don't reuse the values because the debugger might encounter them when consuming old binaries.
@@ -59,8 +59,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 case GeneratedNameKind.LambdaDisplayClass:
                 case GeneratedNameKind.StateMachineType:
                 case GeneratedNameKind.DynamicCallSiteContainerType:
-                case GeneratedNameKind.MethodGroupConversionCacheFrame:
-                case GeneratedNameKind.MethodGroupConversionCacheDelegateField:
+                case GeneratedNameKind.DelegateCacheContainer:
                     return true;
 
                 default:

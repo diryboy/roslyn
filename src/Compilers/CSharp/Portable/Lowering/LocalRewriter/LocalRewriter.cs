@@ -17,7 +17,6 @@ namespace Microsoft.CodeAnalysis.CSharp
         private readonly SynthesizedSubmissionFields _previousSubmissionFields;
         private readonly bool _allowOmissionOfConditionalCalls;
         private readonly LoweredDynamicOperationFactory _dynamicFactory;
-        private readonly DelegateCacheManager _delegateCacheManager;
 
         private bool _sawLambdas;
         private bool _inExpressionLambda;
@@ -25,6 +24,12 @@ namespace Microsoft.CodeAnalysis.CSharp
         private bool _sawAwait;
         private bool _sawAwaitInExceptionHandler;
         private readonly DiagnosticBag _diagnostics;
+
+        /// <summary>
+        /// A lazily created delegate cache container of <see cref="DelegateCacheContainerKind.MethodScopedGeneric"/>.
+        /// </summary>
+        private TypeOrMethodScopedDelegateCacheContainer _methodScopedDelegateCacheContainer;
+        private readonly int _methodOrdinal;
 
         private LocalRewriter(
             CSharpCompilation compilation,
@@ -41,10 +46,10 @@ namespace Microsoft.CodeAnalysis.CSharp
             _factory.CurrentMethod = containingMethod;
             Debug.Assert(factory.CurrentType == (containingType ?? containingMethod.ContainingType));
             _dynamicFactory = new LoweredDynamicOperationFactory(factory, containingMethodOrdinal);
-            _delegateCacheManager = compilation.DelegateCacheManager;
             _previousSubmissionFields = previousSubmissionFields;
             _allowOmissionOfConditionalCalls = allowOmissionOfConditionalCalls;
             _diagnostics = diagnostics;
+            _methodOrdinal = containingMethodOrdinal;
         }
 
         /// <summary>

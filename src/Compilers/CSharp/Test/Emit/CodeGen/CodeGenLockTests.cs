@@ -518,7 +518,7 @@ class Test
         }
 
         [Fact]
-        /// For implicit conversion <see cref="CodeGenMethodGroupConversionTests.LockDelegate">
+        /// For method group conversion <see cref="CodeGenMethodGroupConversionTests.LockDelegate">
         public void LockDelegate()
         {
             var text =
@@ -529,7 +529,7 @@ partial class Test
     public static void Main()
     {
         D d1;
-        lock (d1 = (D)PM)
+        lock (d1 = new D(PM))
         {
         }
     }

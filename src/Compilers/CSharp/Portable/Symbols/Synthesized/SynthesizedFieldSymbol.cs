@@ -6,9 +6,6 @@ using Roslyn.Utilities;
 namespace Microsoft.CodeAnalysis.CSharp.Symbols
 {
     /// <summary>
-    /// Represents a compiler generated field.
-    /// </summary>
-    /// <summary>
     /// Represents a compiler generated field of given type and name.
     /// </summary>
     internal class SynthesizedFieldSymbol : SynthesizedFieldSymbolBase

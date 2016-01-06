@@ -1,125 +1,88 @@
 ﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
-using System.Collections.Generic;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Threading;
 using Microsoft.Cci;
 using Microsoft.CodeAnalysis.CSharp.Emit;
 using Microsoft.CodeAnalysis.Symbols;
+using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.CSharp.Symbols
 {
-    internal sealed class DelegateCacheManager : CommonDelegateCacheManager, IComparer<DelegateCacheContainer>
+    using ModuleScopedContainerCollection = ConcurrentDictionary<TypeSymbol, ModuleScopedDelegateCacheContainer>;
+
+    internal sealed class DelegateCacheManager : CommonDelegateCacheManager, IComparer<ModuleScopedDelegateCacheContainer>
     {
-        internal CSharpCompilation Compilation { get; }
+        private ModuleScopedContainerCollection _lazyModuleScopedContainers;
 
-        private ConcurrentDictionary<MethodSymbol, DelegateCacheContainer> _lazyContainers;
-
-        private ConcurrentDictionary<MethodSymbol, DelegateCacheContainer> Containers
+        private ModuleScopedContainerCollection ModuleScopedContainers
         {
             get
             {
-                if (_lazyContainers == null)
+                if (_lazyModuleScopedContainers == null)
                 {
-                    for (var previousSubmission = Compilation.PreviousSubmission; previousSubmission != null; previousSubmission = previousSubmission.PreviousSubmission)
-                    {
-                        var previousFrames = previousSubmission.DelegateCacheManager._lazyContainers;
-
-                        if (previousFrames != null)
-                        {
-                            Interlocked.CompareExchange(ref _lazyContainers, new ConcurrentDictionary<MethodSymbol, DelegateCacheContainer>(previousFrames), null);
-                            return _lazyContainers;
-                        }
-                    }
-
-                    Interlocked.CompareExchange(ref _lazyContainers, new ConcurrentDictionary<MethodSymbol, DelegateCacheContainer>(), null);
+                    Interlocked.CompareExchange(ref _lazyModuleScopedContainers, new ModuleScopedContainerCollection(), null);
                 }
 
-                return _lazyContainers;
+                return _lazyModuleScopedContainers;
             }
         }
 
-        internal DelegateCacheManager(CSharpCompilation compilation)
+        internal DelegateCacheContainer ObtainModuleScopedContainer(CSharpCompilation compilation, TypeSymbol delegateType)
         {
-            Compilation = compilation;
+            return ModuleScopedContainers.GetOrAdd(delegateType, t => new ModuleScopedDelegateCacheContainer(compilation, t));
         }
 
-        public DelegateCacheContainer ObtainCacheContainer(MethodSymbol targetMethod)
+        internal void AssignNames(PEModuleBuilder moduleBuilder, DiagnosticBag diagnostics)
         {
-            return Containers.GetOrAdd(targetMethod, method => DelegateCacheContainer.Create(this, method));
+            if (_lazyModuleScopedContainers == null)
+            {
+                return;
+            }
+
+            var moduleId = moduleBuilder.GetModuleIdForSynthesizedTopLevelTypes();
+            var generation = moduleBuilder.CurrentGenerationOrdinal;
+
+            var containerIndex = 0;
+            foreach (var container in GetModuleScopedContainers())
+            {
+                container.AssignName(GeneratedNames.MakeDelegateCacheContainerName(containerIndex, generation, moduleId));
+                containerIndex++;
+
+                var fieldIndex = 0;
+                foreach (var field in container.GetAllCreatedFields())
+                {
+                    field.AssignName(GeneratedNames.MakeDelegateCacheContainerFieldName(field.TargetMethodName, fieldIndex));
+                    fieldIndex++;
+                }
+            }
         }
 
         /// <remarks>The order should be fixed.</remarks>
-        internal ImmutableArray<DelegateCacheContainer> GetAllCreatedContainers()
+        internal ImmutableArray<ModuleScopedDelegateCacheContainer> GetModuleScopedContainers()
         {
-            var builder = ArrayBuilder<DelegateCacheContainer>.GetInstance();
-
-            foreach (var frame in Containers.Values)
+            var containers = _lazyModuleScopedContainers;
+            if (containers != null)
             {
-                if (ReferenceEquals(frame.Manager, this))
+                var builder = ArrayBuilder<ModuleScopedDelegateCacheContainer>.GetInstance();
+
+                foreach (var container in containers.Values)
                 {
-                    builder.Add(frame);
-                }
-            }
-
-            builder.Sort(this);
-
-            return builder.ToImmutableAndFree();
-        }
-
-        public int Compare(DelegateCacheContainer x, DelegateCacheContainer y)
-        {
-            return String.CompareOrdinal(x.SortKey, y.SortKey);
-        }
-
-        /// <summary>
-        /// Resets numbering in container names?
-        /// </summary>
-        internal void AssignContainerNames(PEModuleBuilder moduleBuilder, DiagnosticBag diagnostics)
-        {
-            foreach (var previousTarget in moduleBuilder.GetPreviousMethodGroupConversionTargets())
-            {
-                Containers.GetOrAdd(previousTarget, method => DelegateCacheContainer.Create(this, method));
-            }
-
-            string moduleId;
-
-            if (moduleBuilder.OutputKind == OutputKind.NetModule)
-            {
-                moduleId = moduleBuilder.Name;
-
-                string extension = OutputKind.NetModule.GetDefaultExtension();
-
-                if (moduleId.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
-                {
-                    moduleId = moduleId.Substring(0, moduleId.Length - extension.Length);
+                    builder.Add(container);
                 }
 
-                moduleId = MetadataHelpers.MangleForTypeNameIfNeeded(moduleId);
-            }
-            else
-            {
-                moduleId = string.Empty;
+                builder.Sort(this);
+
+                return builder.ToImmutableAndFree();
             }
 
-            var nextIndex = moduleBuilder.GetNextDelegateCacheContainerIndex();
-            foreach (var frame in GetAllCreatedContainers())
-            {
-                string name;
-                int index;
-                if (!moduleBuilder.TryGetDelegateCacheContainerName(frame, out name, out index))
-                {
-                    index = nextIndex++;
-                    name = GeneratedNames.MakeDelegateCacheContainerName(index, Compilation.GetSubmissionSlotIndex(), moduleId);
-                }
-
-                frame.AssignNameAndIndex(name, index);
-            }
+            return ImmutableArray<ModuleScopedDelegateCacheContainer>.Empty;
         }
 
-        internal NamedTypeSymbol System_Object => Compilation.GetSpecialType(SpecialType.System_Object);
+        public int Compare(ModuleScopedDelegateCacheContainer x, ModuleScopedDelegateCacheContainer y) => String.CompareOrdinal(x.SortKey, y.SortKey);
     }
 }

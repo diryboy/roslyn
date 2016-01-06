@@ -143,7 +143,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
         Private ReadOnly _anonymousTypeManager As AnonymousTypeManager
 
         ''' <summary>
-        ''' Manages cache frames created for implicit method group conversion from static methods.
+        ''' Manages cache containers created for implicit method group conversion from static methods.
         ''' </summary>
         Private ReadOnly _delegateCacheManager As DelegateCacheManager
 

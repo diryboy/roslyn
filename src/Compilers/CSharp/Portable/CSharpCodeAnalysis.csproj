@@ -453,8 +453,6 @@
     <Compile Include="Lowering\LocalRewriter\LocalRewriter_Yield.cs" />
     <Compile Include="Lowering\LocalRewriter\LoweredDynamicOperation.cs" />
     <Compile Include="Lowering\LocalRewriter\LoweredDynamicOperationFactory.cs" />
-    <Compile Include="Symbols\DelegateCaches\DelegateCacheContainer.cs" />
-    <Compile Include="Symbols\DelegateCaches\DelegateCacheManager.cs" />
     <Compile Include="Lowering\MethodToClassRewriter.cs" />
     <Compile Include="Lowering\StateMachineRewriter\CapturedSymbol.cs" />
     <Compile Include="Lowering\StateMachineRewriter\IteratorAndAsyncCaptureWalker.cs" />
@@ -536,6 +534,14 @@
     <Compile Include="Symbols\ConstructedNamedTypeSymbol.cs" />
     <Compile Include="Symbols\ConversionSignatureComparer.cs" />
     <Compile Include="Symbols\CustomModifier.cs" />
+    <Compile Include="Symbols\DelegateCaches\DelegateCacheContainer.cs" />
+    <Compile Include="Symbols\DelegateCaches\DelegateCacheContainerKind.cs" />
+    <Compile Include="Symbols\DelegateCaches\DelegateCacheManager.cs" />
+    <Compile Include="Symbols\DelegateCaches\FullyConcreteChecker.cs" />
+    <Compile Include="Symbols\DelegateCaches\ModuleScopedDelegateCacheContainer.cs" />
+    <Compile Include="Symbols\DelegateCaches\ModuleScopedDelegateCacheContainerField.cs" />
+    <Compile Include="Symbols\DelegateCaches\TypeOrMethodScopedDelegateCacheContainer.cs" />
+    <Compile Include="Symbols\DelegateCaches\TypeParameterUsageChecker.cs" />
     <Compile Include="Symbols\DynamicTypeEraser.cs" />
     <Compile Include="Symbols\DynamicTypeSymbol.cs" />
     <Compile Include="Symbols\EnumConversions.cs" />
@@ -572,7 +578,6 @@
     <Compile Include="Symbols\Metadata\PE\PETypeParameterSymbol.cs" />
     <Compile Include="Symbols\MetadataOrSourceAssemblySymbol.cs" />
     <Compile Include="Symbols\Metadata\PE\SymbolFactory.cs" />
-    <Compile Include="Symbols\DelegateCaches\DelegateCacheContainerTypeParameter.cs" />
     <Compile Include="Symbols\MethodSymbol.cs" />
     <Compile Include="Symbols\MethodSymbolExtensions.cs" />
     <Compile Include="Symbols\MissingAssemblySymbol.cs" />
@@ -694,6 +699,7 @@
     <Compile Include="Symbols\Synthesized\SynthesizedAccessorValueParameterSymbol.cs" />
     <Compile Include="Symbols\Synthesized\SynthesizedBackingFieldSymbol.cs" />
     <Compile Include="Symbols\Synthesized\SynthesizedContainer.cs" />
+    <Compile Include="Symbols\Synthesized\SynthesizedContainerBase.cs" />
     <Compile Include="Symbols\Synthesized\SynthesizedDelegateSymbol.cs" />
     <Compile Include="Symbols\Synthesized\SynthesizedEntryPointSymbol.cs" />
     <Compile Include="Symbols\Synthesized\SynthesizedEnumValueFieldSymbol.cs" />

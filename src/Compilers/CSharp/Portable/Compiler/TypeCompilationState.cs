@@ -171,6 +171,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             return _wrappers != null && _wrappers.TryGetValue(method, out wrapper) ? wrapper : null;
         }
 
+        /// <summary>
+        /// A lazily created delegate cache container of <see cref="DelegateCacheContainerKind.TypeScopedConcrete"/>.
+        /// </summary>
+        internal TypeOrMethodScopedDelegateCacheContainer TypeScopedDelegateCacheContainerOpt { get; set; }
+
         /// <summary> Free resources allocated for this method collection </summary>
         public void Free()
         {

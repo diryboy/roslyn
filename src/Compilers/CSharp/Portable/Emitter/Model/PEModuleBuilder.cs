@@ -342,25 +342,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             return null;
         }
 
-        internal virtual ImmutableArray<MethodSymbol> GetPreviousMethodGroupConversionTargets()
-        {
-            return ImmutableArray<MethodSymbol>.Empty;
-        }
-
-        internal virtual int GetNextDelegateCacheContainerIndex()
-        {
-            return 0;
-        }
-
-        internal virtual bool TryGetDelegateCacheContainerName(NamedTypeSymbol container, out string name, out int index)
-        {
-            Debug.Assert(Compilation == container.DeclaringCompilation);
-
-            name = null;
-            index = -1;
-            return false;
-        }
-
         internal override ImmutableArray<Cci.INamespaceTypeDefinition> GetDelegateCacheContainers()
         {
             if (EmitOptions.EmitMetadataOnly)
@@ -368,7 +349,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                 return ImmutableArray<Cci.INamespaceTypeDefinition>.Empty;
             }
 
-            return StaticCast<Cci.INamespaceTypeDefinition>.From(Compilation.DelegateCacheManager.GetAllCreatedContainers());
+            return StaticCast<Cci.INamespaceTypeDefinition>.From(Compilation.DelegateCacheManager.GetModuleScopedContainers());
         }
 
         internal virtual ImmutableArray<AnonymousTypeKey> GetPreviousAnonymousTypes()

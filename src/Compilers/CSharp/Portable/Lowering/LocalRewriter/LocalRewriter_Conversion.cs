@@ -309,17 +309,12 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 case ConversionKind.MethodGroup:
 
-                    if (_inExpressionLambda || explicitCastInCode || (object)symbolOpt == null || !symbolOpt.IsStatic || symbolOpt.MethodKind != MethodKind.Ordinary)
-                    {
-                        break;
-                    }
-                    if (symbolOpt.IsExtensionMethod && ((BoundMethodGroup)rewrittenOperand).InstanceOpt != null)
+                    if (_inExpressionLambda || !symbolOpt.IsStatic || isExtensionMethod)
                     {
                         break;
                     }
 
                     return RewriteMethodGroupConversion(oldNode, syntax, rewrittenOperand, symbolOpt, isExtensionMethod, rewrittenType);
-
 
                 case ConversionKind.ImplicitDynamic:
                 case ConversionKind.ExplicitDynamic:
@@ -1313,26 +1308,90 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private BoundExpression RewriteMethodGroupConversion(BoundConversion oldNode, CSharpSyntaxNode syntax, BoundExpression operand, MethodSymbol targetMethod, bool isExtensionMethod, TypeSymbol type)
         {
-            Debug.Assert((object)targetMethod != null);
             Debug.Assert(type.IsDelegateType());
+            Debug.Assert((object)targetMethod != null);
 
-            var targetMethodDefinition = targetMethod.OriginalDefinition;
-            var cacheContainer = _delegateCacheManager.ObtainCacheContainer(targetMethodDefinition);
-            var typeArguments = DelegateCacheContainer.GetTypeArgumentsFromConversion(type, targetMethod);
+            var cacheContainer = ObtainCacheContainer(type, targetMethod);
+            var cacheField = cacheContainer.ObtainCacheField(_factory, type, targetMethod);
+
+            if (cacheContainer.ContainerKind == DelegateCacheContainerKind.MethodScopedGeneric)
+            {
+                cacheField = cacheField.AsMember(cacheContainer.Construct(_factory.TopLevelMethod.TypeParameters));
+            }
 
             var orgSyntax = _factory.Syntax;
             _factory.Syntax = syntax;
 
-            var boundCacheField = _factory.Field(null, cacheContainer.DelegateField.AsMember(cacheContainer.Construct(typeArguments)));
+            var boundCacheField = _factory.Field(null, cacheField);
             var boundDelegateCreation = new BoundDelegateCreationExpression(syntax, operand, targetMethod, isExtensionMethod, type)
             {
                 WasCompilerGenerated = true
             };
 
             var rewrittenNode = _factory.Coalesce(boundCacheField, _factory.AssignmentExpression(boundCacheField, boundDelegateCreation));
+
             _factory.Syntax = orgSyntax;
 
             return rewrittenNode;
+        }
+
+        private DelegateCacheContainer ObtainCacheContainer(TypeSymbol delegateType, MethodSymbol targetMethod)
+        {
+            var currentMethod = _factory.TopLevelMethod;
+            var containerKind = ChooseDelegateCacheContainerKind(currentMethod, delegateType, targetMethod);
+
+            if (containerKind == DelegateCacheContainerKind.ModuleScopedConcrete)
+            {
+                var compilation = _factory.Compilation;
+                return compilation.DelegateCacheManager.ObtainModuleScopedContainer(compilation, delegateType);
+            }
+
+            if (containerKind == DelegateCacheContainerKind.TypeScopedConcrete)
+            {
+                var typeCompilationState = _factory.CompilationState;
+                var tsContainer = typeCompilationState.TypeScopedDelegateCacheContainerOpt;
+                if ((object)tsContainer == null)
+                {
+                    typeCompilationState.TypeScopedDelegateCacheContainerOpt
+                        = tsContainer
+                        = new TypeOrMethodScopedDelegateCacheContainer(currentMethod.ContainingType, _factory.ModuleBuilderOpt.CurrentGenerationOrdinal);
+                    _factory.AddNestedType(tsContainer);
+                }
+                return tsContainer;
+            }
+
+            var msContainer = _methodScopedDelegateCacheContainer;
+            if ((object)msContainer == null)
+            {
+                _methodScopedDelegateCacheContainer
+                    = msContainer
+                    = new TypeOrMethodScopedDelegateCacheContainer(currentMethod, _methodOrdinal, _factory.ModuleBuilderOpt.CurrentGenerationOrdinal);
+                _factory.AddNestedType(msContainer);
+            }
+            return msContainer;
+        }
+
+        private static DelegateCacheContainerKind ChooseDelegateCacheContainerKind(MethodSymbol currentMethod, TypeSymbol delegateType, MethodSymbol targetMethod)
+        {
+            var fullyConcreteChecker = FullyConcreteChecker.Instance;
+            if (fullyConcreteChecker.Visit(delegateType) && fullyConcreteChecker.Visit(targetMethod))
+            {
+                return DelegateCacheContainerKind.ModuleScopedConcrete;
+            }
+
+            if (currentMethod.Arity == 0)
+            {
+                return DelegateCacheContainerKind.TypeScopedConcrete;
+            }
+
+            var typeParams = currentMethod.TypeParameters;
+            var typeParamUsageChecker = TypeParameterUsageChecker.Instance;
+            if (!typeParamUsageChecker.Visit(delegateType, typeParams) && !typeParamUsageChecker.Visit(targetMethod, typeParams))
+            {
+                return DelegateCacheContainerKind.TypeScopedConcrete;
+            }
+
+            return DelegateCacheContainerKind.MethodScopedGeneric;
         }
 
         private Conversion MakeConversion(CSharpSyntaxNode syntax, Conversion conversion, TypeSymbol fromType, TypeSymbol toType)

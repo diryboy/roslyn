@@ -320,21 +320,6 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Emit
             Return Nothing
         End Function
 
-        Friend Overridable Function GetPreviousMethodGroupConversionTargets() As ImmutableArray(Of MethodSymbol)
-            Return ImmutableArray(Of MethodSymbol).Empty
-        End Function
-
-        Friend Overridable Function GetNextMethodGroupConversionCacheFrameIndex() As Integer
-            Return 0
-        End Function
-
-        Friend Overridable Function TryGetMethodGroupConversionCacheFrameName(frame As NamedTypeSymbol, <Out> ByRef name As String, <Out> ByRef index As Integer) As Boolean
-            Debug.Assert(Compilation Is frame.DeclaringCompilation)
-            name = Nothing
-            index = -1
-            Return False
-        End Function
-
         Friend Overrides Function GetDelegateCacheContainers() As ImmutableArray(Of Cci.INamespaceTypeDefinition)
             If EmitOptions.EmitMetadataOnly Then
                 Return ImmutableArray(Of Cci.INamespaceTypeDefinition).Empty

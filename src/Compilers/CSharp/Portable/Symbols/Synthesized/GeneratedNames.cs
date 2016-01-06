@@ -54,43 +54,50 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return MakeMethodScopedSynthesizedName(GeneratedNameKind.LambdaDisplayClass, methodOrdinal, generation, suffix: "DisplayClass", entityOrdinal: closureOrdinal, entityGeneration: closureGeneration, isTypeName: true);
         }
 
-        private static string MakeTopLevelTypeName(string nameKind, string suffix, int index, int variantIndex, string moduleId)
+        private static string MakeScopedIndexedTypeName(string nameKind, string suffixOpt, int index, int generation, string scopeIdOpt)
         {
             Debug.Assert(!String.IsNullOrWhiteSpace(nameKind));
 
             var result = PooledStringBuilder.GetInstance();
             var builder = result.Builder;
 
-            builder.Append("<").Append(moduleId).Append(">").Append(nameKind).Append(SuffixSeparator);
-            if (suffix != null)
+            builder.Append("<").Append(scopeIdOpt).Append(">").Append(nameKind);
+
+            if (suffixOpt != null || index > 0)
             {
-                builder.Append(suffix);
+                builder.Append(SuffixSeparator).Append(suffixOpt).Append(StringExtensions.GetNumeral(index));
             }
-            builder.Append(StringExtensions.GetNumeral(index));
-            if (variantIndex > 0)
+
+            if (generation > 0)
             {
-                builder.Append("#").Append(StringExtensions.GetNumeral(variantIndex));
+                builder.Append(GenerationSeparator).Append(StringExtensions.GetNumeral(generation));
             }
 
             return result.ToStringAndFree();
         }
 
-        internal static string MakeDelegateCacheContainerName(int index, int generationOrdinal, string moduleId)
+        internal static string MakeDelegateCacheContainerName(int index, int generation, string scopeIdOpt)
         {
-            Debug.Assert((char)GeneratedNameKind.MethodGroupConversionCacheFrame == 'q');
-            return MakeTopLevelTypeName("q", null, index, generationOrdinal, moduleId);
+            Debug.Assert((char)GeneratedNameKind.DelegateCacheContainer == 'v');
+            return MakeScopedIndexedTypeName("v", null, index, generation, scopeIdOpt);
         }
 
-        internal static string MakeDelegateCacheContainerFieldName(string methodName)
+        internal static string MakeDelegateCacheContainerFieldName(string targetMethodName, int index)
         {
-            Debug.Assert((char)GeneratedNameKind.MethodGroupConversionCacheDelegateField == 'r');
-            return "<" + methodName + ">r";
+            Debug.Assert((char)GeneratedNameKind.DelegateCacheContainerField == 'w');
+
+            var name = "<" + targetMethodName + ">w";
+            if (index > 0)
+            {
+                name += SuffixSeparator + StringExtensions.GetNumeral(index);
+            }
+            return name;
         }
 
         internal static string MakeAnonymousTypeTemplateName(int index, int submissionSlotIndex, string moduleId)
         {
             Debug.Assert((char)GeneratedNameKind.AnonymousType == 'f');
-            return MakeTopLevelTypeName("f", "AnonymousType", index, submissionSlotIndex, moduleId);
+            return MakeScopedIndexedTypeName("f", "AnonymousType", index, submissionSlotIndex, moduleId);
         }
 
         internal const string AnonymousNamePrefix = "<>f__AnonymousType";
