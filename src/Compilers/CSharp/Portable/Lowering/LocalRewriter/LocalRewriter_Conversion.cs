@@ -309,7 +309,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 case ConversionKind.MethodGroup:
 
-                    if (_inExpressionLambda || !symbolOpt.IsStatic || isExtensionMethod)
+                    if (!symbolOpt.IsStatic || isExtensionMethod || _inExpressionLambda || _factory.TopLevelMethod.MethodKind == MethodKind.StaticConstructor)
                     {
                         break;
                     }

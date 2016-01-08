@@ -33,7 +33,11 @@ class C
     static void Target() { Console.WriteLine(""FAIL""); }
     static void Invoke(D x, D y) { Console.Write(Object.ReferenceEquals(x, y) ? ""FAIL"" : ""PASS""); }
 }";
-            var compilation = CompileAndVerify(source, expectedOutput: PASS);
+            Action<ModuleSymbol> containerValidator = module =>
+            {
+                Assert.Null(module.GlobalNamespace.GetMember<NamedTypeSymbol>("<>v"));
+            };
+            var compilation = CompileAndVerify(source, symbolValidator: containerValidator, expectedOutput: PASS);
         }
 
         [Fact]
@@ -53,7 +57,11 @@ class C
     void Target() { Console.WriteLine(""FAIL""); }
     void Invoke(D x, D y) { Console.Write(Object.ReferenceEquals(x, y) ? ""FAIL"" : ""PASS""); }
 }";
-            var compilation = CompileAndVerify(source, expectedOutput: PASS);
+            Action<ModuleSymbol> containerValidator = module =>
+            {
+                Assert.Null(module.GlobalNamespace.GetMember<NamedTypeSymbol>("<>v"));
+            };
+            var compilation = CompileAndVerify(source, symbolValidator: containerValidator, expectedOutput: PASS);
         }
 
         [Fact]
@@ -77,7 +85,11 @@ static class E
     public static void Target(this C that) { Console.WriteLine(""FAIL""); }
 }
 ";
-            var compilation = CompileAndVerify(source, expectedOutput: PASS, additionalRefs: s_SystemCoreRef);
+            Action<ModuleSymbol> containerValidator = module =>
+            {
+                Assert.Null(module.GlobalNamespace.GetMember<NamedTypeSymbol>("<>v"));
+            };
+            var compilation = CompileAndVerify(source, symbolValidator: containerValidator, expectedOutput: PASS, additionalRefs: s_SystemCoreRef);
         }
 
         [Fact]
@@ -101,7 +113,11 @@ static class E
     public static void Target(this C that) { Console.WriteLine(""FAIL""); }
 }
 ";
-            var compilation = CompileAndVerify(source, expectedOutput: PASS, additionalRefs: s_SystemCoreRef);
+            Action<ModuleSymbol> containerValidator = module =>
+            {
+                Assert.Null(module.GlobalNamespace.GetMember<NamedTypeSymbol>("<>v"));
+            };
+            var compilation = CompileAndVerify(source, symbolValidator: containerValidator, expectedOutput: PASS, additionalRefs: s_SystemCoreRef);
         }
 
         [Fact]
@@ -148,6 +164,47 @@ class C
                 Assert.Null(module.GlobalNamespace.GetMember<NamedTypeSymbol>("<>v"));
             };
             var compilation = CompileAndVerify(source, symbolValidator: containerValidator, additionalRefs: s_SystemCoreRef);
+        }
+
+        [Fact]
+        public void Not_InStaticConstructor0()
+        {
+            var source = @"
+using System;
+class C
+{
+    static readonly Action ManualCache = Target;
+    static void Target() { }
+}
+";
+            Action<ModuleSymbol> containerValidator = module =>
+            {
+                Assert.Null(module.GlobalNamespace.GetMember<NamedTypeSymbol>("<>v"));
+            };
+            var compilation = CompileAndVerify(source, symbolValidator: containerValidator);
+        }
+
+        [Fact]
+        public void Not_InStaticConstructor1()
+        {
+            var source = @"
+using System;
+struct C
+{
+    static readonly Action ManualCache;
+    static void Target() { }
+
+    static C()
+    {
+        ManualCache = Target;
+    }
+}
+";
+            Action<ModuleSymbol> containerValidator = module =>
+            {
+                Assert.Null(module.GlobalNamespace.GetMember<NamedTypeSymbol>("<>v"));
+            };
+            var compilation = CompileAndVerify(source, symbolValidator: containerValidator);
         }
 
         #endregion
