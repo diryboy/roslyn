@@ -7018,7 +7018,7 @@ public class C
     public static void Target1() { }
 }";
 
-            var compilation0 = CreateCompilationWithMscorlib(source0, options: TestOptions.DebugDll);
+            var compilation0 = CreateCompilationWithMscorlib(source0, options: ComSafeDebugDll);
             var compilation1 = compilation0.WithSource(source1);
             var compilation2a = compilation1.WithSource(source2a);
             var compilation2b = compilation1.WithSource(source2b);
