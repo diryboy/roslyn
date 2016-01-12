@@ -15,7 +15,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 {
     using ModuleScopedContainerCollection = ConcurrentDictionary<TypeSymbol, ModuleScopedDelegateCacheContainer>;
 
-    internal sealed class DelegateCacheManager : CommonDelegateCacheManager, IComparer<ModuleScopedDelegateCacheContainer>
+    internal sealed class DelegateCacheManager : IComparer<ModuleScopedDelegateCacheContainer>
     {
         private ModuleScopedContainerCollection _lazyModuleScopedContainers;
 

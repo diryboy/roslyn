@@ -225,8 +225,6 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
                     compiler.CompileSynthesizedMethods(additionalTypes)
                 End If
 
-                compilation.DelegateCacheManager.AssignContainerNames(moduleBeingBuiltOpt, diagnostics)
-
                 compilation.AnonymousTypeManager.AssignTemplatesNamesAndCompile(compiler, moduleBeingBuiltOpt, diagnostics)
                 compiler.WaitForWorkers()
 

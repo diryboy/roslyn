@@ -131,8 +131,6 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         internal DelegateCacheManager DelegateCacheManager => _delegateCacheManager;
 
-        internal override CommonDelegateCacheManager CommonDelegateCacheManager => DelegateCacheManager;
-
         /// <summary>
         /// True when the compiler is run in "strict" mode, in which it enforces the language specification
         /// in some cases even at the expense of full compatibility. Such differences typically arise when

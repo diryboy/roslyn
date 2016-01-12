@@ -732,8 +732,6 @@ namespace Microsoft.CodeAnalysis
 
         internal abstract CommonAnonymousTypeManager CommonAnonymousTypeManager { get; }
 
-        internal abstract CommonDelegateCacheManager CommonDelegateCacheManager { get; }
-
         /// <summary>
         /// Returns the Main method that will serves as the entry point of the assembly, if it is
         /// executable (and not a script).

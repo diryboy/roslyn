@@ -143,11 +143,6 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
         Private ReadOnly _anonymousTypeManager As AnonymousTypeManager
 
         ''' <summary>
-        ''' Manages cache containers created for implicit method group conversion from static methods.
-        ''' </summary>
-        Private ReadOnly _delegateCacheManager As DelegateCacheManager
-
-        ''' <summary>
         ''' Manages automatically embedded content.
         ''' </summary>
         Private _lazyEmbeddedSymbolManager As EmbeddedSymbolManager
@@ -221,18 +216,6 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
         Friend Overrides ReadOnly Property CommonAnonymousTypeManager As CommonAnonymousTypeManager
             Get
                 Return Me._anonymousTypeManager
-            End Get
-        End Property
-
-        Friend ReadOnly Property DelegateCacheManager As DelegateCacheManager
-            Get
-                Return Me._delegateCacheManager
-            End Get
-        End Property
-
-        Friend Overrides ReadOnly Property CommonDelegateCacheManager As CommonDelegateCacheManager
-            Get
-                Return Me._delegateCacheManager
             End Get
         End Property
 
@@ -441,7 +424,6 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
             _embeddedTrees = embeddedTrees
             _declarationTable = declarationTable
             _anonymousTypeManager = New AnonymousTypeManager(Me)
-            _delegateCacheManager = New DelegateCacheManager(Me)
             _languageVersion = CommonLanguageVersion(syntaxTrees)
 
             _scriptClass = New Lazy(Of ImplicitNamedTypeSymbol)(AddressOf BindScriptClass)
