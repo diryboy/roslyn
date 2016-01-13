@@ -14,7 +14,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 {
     internal class ModuleScopedDelegateCacheContainerField : SynthesizedFieldSymbol
     {
-        /// See comments on <see cref="ModuleScopedDelegateCacheContainer.SortKey"/>
+        /// Why the _name is not readonly? Why the SortKey?
+        /// See comments above <see cref="ModuleScopedDelegateCacheContainer._name"/>
         private string _name;
         public override string Name => _name;
         public string SortKey { get; }
@@ -29,7 +30,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             SortKey = sortkey;
         }
 
-        /// <remarks>This method is only intended to be called from <see cref="ModuleScopedDelegateCacheManager"/></remarks>.
+        /// <remarks>This method is only intended to be called from <see cref="ModuleScopedDelegateCacheContainer"/></remarks>.
         internal void AssignName(string name)
         {
             Debug.Assert(name != null && _name == null, "Name should only be assigned once.");

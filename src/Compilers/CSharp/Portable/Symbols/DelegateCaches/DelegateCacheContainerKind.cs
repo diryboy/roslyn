@@ -9,9 +9,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
     {
         /// <summary>
         /// This kind of containers are used when ALL of the following conditions are satisfied:
-        ///   1. The delegate type is fully concrete;
+        ///   1. The delegate type and its containing types all the way up are fully concrete;
         ///   2. The type arguments of the target method and its containing types all the way up are fully concrete.
         /// A container of this kind can be shared by conversions within the same module, as long as they have the same fully contructed delegate type.
+        /// We group module scoped containers by delegate type to:
+        ///   1. It might change the time when types are loaded. That could actually break apps, who depend on not loading a type (e.g. when implementing a light-up). - @tmat
+        ///   2. Avoid potential massive loading of types used in various delegates once we touch the cache. - @VSadov
         /// </summary>
         ModuleScopedConcrete,
 
@@ -20,6 +23,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         ///   1. Fails to qualify for a <see cref="ModuleScopedConcrete"/> container;
         ///   2. Neither of the delegate type nor the target method use any of the type parameters from the top level method.
         /// A container of this kind can be shared by conversions within the same enclosing type.
+        /// Delegates are not grouped in type level because currently static lambda frame don't do this, and people don't do grouping where they cache manually.
         /// </summary>
         TypeScopedConcrete,
 

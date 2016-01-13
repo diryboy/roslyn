@@ -19,6 +19,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
     /// </summary>
     internal class ModuleScopedDelegateCacheContainer : DelegateCacheContainer, IComparer<ModuleScopedDelegateCacheContainerField>
     {
+        // Why the _name is not readonly? Why the SortKey?
         // The container is a top level type, and the compilation can be parallel.
         // To ensure simple & deterministic output, we need a unique and deterministic sort key when it's created.
         // When all methods are compiled thus all containers are created, and when things are happening serially before emit, 
