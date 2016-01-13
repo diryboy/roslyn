@@ -3716,6 +3716,232 @@ class D
         }
 
         [Fact]
+        public void Pointer_ModuleScoped0()
+        {
+            var source = @"
+using System;
+class C
+{
+    unsafe void Test()
+    {
+        Func<int*[]> t = Target;
+        t();
+    }
+
+    unsafe static int*[] Target() => default(int*[]);
+}
+";
+            var compilation = CompileAndVerify(source, options: TestOptions.UnsafeReleaseDll).VerifyIL("C.Test", @"
+{
+  // Code size       34 (0x22)
+  .maxstack  2
+  IL_0000:  ldsfld     ""System.Func<int*[]> <>v.<Target>w""
+  IL_0005:  dup
+  IL_0006:  brtrue.s   IL_001b
+  IL_0008:  pop
+  IL_0009:  ldnull
+  IL_000a:  ldftn      ""int*[] C.Target()""
+  IL_0010:  newobj     ""System.Func<int*[]>..ctor(object, System.IntPtr)""
+  IL_0015:  dup
+  IL_0016:  stsfld     ""System.Func<int*[]> <>v.<Target>w""
+  IL_001b:  callvirt   ""int*[] System.Func<int*[]>.Invoke()""
+  IL_0020:  pop
+  IL_0021:  ret
+}
+");
+        }
+
+        [Fact]
+        public void Pointer_TypeScoped0()
+        {
+            var source = @"
+using System;
+class C<T>
+{
+    unsafe void Test()
+    {
+        Func<T, int*[]> t = Target;
+        t(default(T));
+    }
+
+    unsafe static int*[] Target(T t) => default(int*[]);
+}
+";
+            var compilation = CompileAndVerify(source, options: TestOptions.UnsafeReleaseDll).VerifyIL("C<T>.Test", @"
+{
+  // Code size       43 (0x2b)
+  .maxstack  2
+  .locals init (T V_0)
+  IL_0000:  ldsfld     ""System.Func<T, int*[]> C<T>.<>v.<Target>w""
+  IL_0005:  dup
+  IL_0006:  brtrue.s   IL_001b
+  IL_0008:  pop
+  IL_0009:  ldnull
+  IL_000a:  ldftn      ""int*[] C<T>.Target(T)""
+  IL_0010:  newobj     ""System.Func<T, int*[]>..ctor(object, System.IntPtr)""
+  IL_0015:  dup
+  IL_0016:  stsfld     ""System.Func<T, int*[]> C<T>.<>v.<Target>w""
+  IL_001b:  ldloca.s   V_0
+  IL_001d:  initobj    ""T""
+  IL_0023:  ldloc.0
+  IL_0024:  callvirt   ""int*[] System.Func<T, int*[]>.Invoke(T)""
+  IL_0029:  pop
+  IL_002a:  ret
+}
+");
+        }
+
+        [Fact]
+        public void Pointer_MethodScoped0()
+        {
+            var source = @"
+using System;
+class C
+{
+    unsafe void Test<T>(T t)
+    {
+        Func<T, int*[]> f = Target<T>;
+        f(t);
+    }
+
+    unsafe static int*[] Target<G>(G g) => default(int*[]);
+}
+";
+            var compilation = CompileAndVerify(source, options: TestOptions.UnsafeReleaseDll).VerifyIL("C.Test<T>", @"
+{
+  // Code size       35 (0x23)
+  .maxstack  2
+  IL_0000:  ldsfld     ""System.Func<T, int*[]> C.<Test>v<T>.<Target>w""
+  IL_0005:  dup
+  IL_0006:  brtrue.s   IL_001b
+  IL_0008:  pop
+  IL_0009:  ldnull
+  IL_000a:  ldftn      ""int*[] C.Target<T>(T)""
+  IL_0010:  newobj     ""System.Func<T, int*[]>..ctor(object, System.IntPtr)""
+  IL_0015:  dup
+  IL_0016:  stsfld     ""System.Func<T, int*[]> C.<Test>v<T>.<Target>w""
+  IL_001b:  ldarg.1
+  IL_001c:  callvirt   ""int*[] System.Func<T, int*[]>.Invoke(T)""
+  IL_0021:  pop
+  IL_0022:  ret
+}
+");
+        }
+
+        [Fact]
+        public void Dynamic_ModuleScoped0()
+        {
+            var source = @"
+using System;
+class C
+{
+    void Test()
+    {
+        Func<dynamic> t = Target;
+        t();
+    }
+
+    static dynamic Target() => 0;
+}
+";
+            var compilation = CompileAndVerify(source, additionalRefs: new[] { SystemCoreRef, CSharpRef }).VerifyIL("C.Test", @"
+{
+  // Code size       34 (0x22)
+  .maxstack  2
+  IL_0000:  ldsfld     ""System.Func<dynamic> <>v.<Target>w""
+  IL_0005:  dup
+  IL_0006:  brtrue.s   IL_001b
+  IL_0008:  pop
+  IL_0009:  ldnull
+  IL_000a:  ldftn      ""dynamic C.Target()""
+  IL_0010:  newobj     ""System.Func<dynamic>..ctor(object, System.IntPtr)""
+  IL_0015:  dup
+  IL_0016:  stsfld     ""System.Func<dynamic> <>v.<Target>w""
+  IL_001b:  callvirt   ""dynamic System.Func<dynamic>.Invoke()""
+  IL_0020:  pop
+  IL_0021:  ret
+}
+");
+        }
+
+        [Fact]
+        public void Dynamic_TypeScoped0()
+        {
+            var source = @"
+using System;
+class C<T>
+{
+    void Test()
+    {
+        Func<T, dynamic> t = Target;
+        t(default(T));
+    }
+
+    static dynamic Target(T t) => 0;
+}
+";
+            var compilation = CompileAndVerify(source, additionalRefs: new[] { SystemCoreRef, CSharpRef }).VerifyIL("C<T>.Test", @"
+{
+  // Code size       43 (0x2b)
+  .maxstack  2
+  .locals init (T V_0)
+  IL_0000:  ldsfld     ""System.Func<T, dynamic> C<T>.<>v.<Target>w""
+  IL_0005:  dup
+  IL_0006:  brtrue.s   IL_001b
+  IL_0008:  pop
+  IL_0009:  ldnull
+  IL_000a:  ldftn      ""dynamic C<T>.Target(T)""
+  IL_0010:  newobj     ""System.Func<T, dynamic>..ctor(object, System.IntPtr)""
+  IL_0015:  dup
+  IL_0016:  stsfld     ""System.Func<T, dynamic> C<T>.<>v.<Target>w""
+  IL_001b:  ldloca.s   V_0
+  IL_001d:  initobj    ""T""
+  IL_0023:  ldloc.0
+  IL_0024:  callvirt   ""dynamic System.Func<T, dynamic>.Invoke(T)""
+  IL_0029:  pop
+  IL_002a:  ret
+}
+");
+        }
+
+        [Fact]
+        public void Dynamic_MethodScoped0()
+        {
+            var source = @"
+using System;
+class C
+{
+    void Test<T>(T t)
+    {
+        Func<T, dynamic> f = Target<T>;
+        f(t);
+    }
+
+    static dynamic Target<G>(G g) => 0;
+}
+";
+            var compilation = CompileAndVerify(source, additionalRefs: new[] { SystemCoreRef, CSharpRef }).VerifyIL("C.Test<T>", @"
+{
+  // Code size       35 (0x23)
+  .maxstack  2
+  IL_0000:  ldsfld     ""System.Func<T, dynamic> C.<Test>v<T>.<Target>w""
+  IL_0005:  dup
+  IL_0006:  brtrue.s   IL_001b
+  IL_0008:  pop
+  IL_0009:  ldnull
+  IL_000a:  ldftn      ""dynamic C.Target<T>(T)""
+  IL_0010:  newobj     ""System.Func<T, dynamic>..ctor(object, System.IntPtr)""
+  IL_0015:  dup
+  IL_0016:  stsfld     ""System.Func<T, dynamic> C.<Test>v<T>.<Target>w""
+  IL_001b:  ldarg.1
+  IL_001c:  callvirt   ""dynamic System.Func<T, dynamic>.Invoke(T)""
+  IL_0021:  pop
+  IL_0022:  ret
+}
+");
+        }
+
+        [Fact]
         public void TestConditionalOperatorMethodGroup()
         {
             var source = @"

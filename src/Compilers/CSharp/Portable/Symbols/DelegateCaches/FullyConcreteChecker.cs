@@ -69,12 +69,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         public override bool VisitDynamicType(DynamicTypeSymbol symbol) => true;
 
-        public override bool VisitPointerType(PointerTypeSymbol symbol)
-        {
-            // Spec: Type arguments may not be pointer types.
-            // And assigning pointer types to anonymous type properties actually fail compiling.
-            throw ExceptionUtilities.Unreachable;
-        }
+        public override bool VisitPointerType(PointerTypeSymbol symbol) => true; // Func<int*[]>
 
         public override bool VisitNamespace(NamespaceSymbol symbol)
         {

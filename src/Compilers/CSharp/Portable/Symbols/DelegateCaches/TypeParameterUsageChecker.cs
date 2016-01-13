@@ -58,12 +58,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return Visit(symbol.ContainingType, argument);
         }
 
-        public override bool VisitPointerType(PointerTypeSymbol symbol, TypeParams argument)
-        {
-            // Spec: Type arguments may not be pointer types.
-            throw ExceptionUtilities.Unreachable;
-        }
-
         public override bool VisitAssembly(AssemblySymbol symbol, TypeParams argument)
         {
             throw ExceptionUtilities.Unreachable;
