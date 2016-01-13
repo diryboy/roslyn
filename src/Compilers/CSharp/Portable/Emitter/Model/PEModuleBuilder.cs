@@ -46,6 +46,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
         private SymbolDisplayFormat _testDataKeyFormat;
         private SymbolDisplayFormat _testDataOperatorKeyFormat;
 
+        /// <summary>
+        /// Manages cache containers of <see cref="DelegateCacheContainerKind.ModuleScopedConcrete"/> created for method group conversion from static methods.
+        /// </summary>
+        internal ModuleScopedDelegateCacheManager DelegateCacheManager { get; }
+
         internal PEModuleBuilder(
             SourceModuleSymbol sourceModule,
             EmitOptions emitOptions,
@@ -72,6 +77,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
             {
                 _embeddedTypesManagerOpt = new NoPia.EmbeddedTypesManager(this);
             }
+
+            DelegateCacheManager = new ModuleScopedDelegateCacheManager(this);
         }
 
         internal override string Name
@@ -349,7 +356,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
                 return ImmutableArray<Cci.INamespaceTypeDefinition>.Empty;
             }
 
-            return StaticCast<Cci.INamespaceTypeDefinition>.From(Compilation.DelegateCacheManager.GetModuleScopedContainers());
+            return StaticCast<Cci.INamespaceTypeDefinition>.From(DelegateCacheManager.GetAllCreatedContainers());
         }
 
         internal virtual ImmutableArray<AnonymousTypeKey> GetPreviousAnonymousTypes()

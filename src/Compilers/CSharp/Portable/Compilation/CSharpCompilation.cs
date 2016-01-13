@@ -78,11 +78,6 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </summary>
         private readonly AnonymousTypeManager _anonymousTypeManager;
 
-        /// <summary>
-        /// Manages cache containers of <see cref="DelegateCacheContainerKind.ModuleScopedConcrete"/> created for method group conversion from static methods.
-        /// </summary>
-        private readonly DelegateCacheManager _delegateCacheManager;
-
         private NamespaceSymbol _lazyGlobalNamespace;
 
         internal readonly BuiltInOperators builtInOperators;
@@ -116,20 +111,48 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// </summary>
         private HashSet<SyntaxTree> _lazyCompilationUnitCompletedTrees;
 
-        public override string Language => LanguageNames.CSharp;
+        public override string Language
+        {
+            get
+            {
+                return LanguageNames.CSharp;
+            }
+        }
 
-        public override bool IsCaseSensitive => true;
+        public override bool IsCaseSensitive
+        {
+            get
+            {
+                return true;
+            }
+        }
 
         /// <summary>
         /// The options the compilation was created with. 
         /// </summary>
-        public new CSharpCompilationOptions Options => _options;
+        public new CSharpCompilationOptions Options
+        {
+            get
+            {
+                return _options;
+            }
+        }
 
-        internal AnonymousTypeManager AnonymousTypeManager => _anonymousTypeManager;
+        internal AnonymousTypeManager AnonymousTypeManager
+        {
+            get
+            {
+                return _anonymousTypeManager;
+            }
+        }
 
-        internal override CommonAnonymousTypeManager CommonAnonymousTypeManager => AnonymousTypeManager;
-
-        internal DelegateCacheManager DelegateCacheManager => _delegateCacheManager;
+        internal override CommonAnonymousTypeManager CommonAnonymousTypeManager
+        {
+            get
+            {
+                return AnonymousTypeManager;
+            }
+        }
 
         /// <summary>
         /// True when the compiler is run in "strict" mode, in which it enforces the language specification
@@ -202,8 +225,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                 options ?? s_defaultSubmissionOptions,
                 (syntaxTree != null) ? new[] { syntaxTree } : SpecializedCollections.EmptyEnumerable<SyntaxTree>(),
                 references,
-                previousScriptCompilation, 
-                returnType, 
+                previousScriptCompilation,
+                returnType,
                 globalsType,
                 isSubmission: true);
         }
@@ -273,7 +296,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             _previousSubmissionImports = new Lazy<Imports>(ExpandPreviousSubmissionImports);
             _globalNamespaceAlias = new Lazy<AliasSymbol>(CreateGlobalNamespaceAlias);
             _anonymousTypeManager = new AnonymousTypeManager(this);
-            _delegateCacheManager = new DelegateCacheManager();
             this.LanguageVersion = CommonLanguageVersion(syntaxAndDeclarations.ExternalSyntaxTrees);
 
             if (isSubmission)
@@ -473,7 +495,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 return this;
             }
-            
+
             // Reference binding doesn't depend on previous submission so we can reuse it.
 
             return new CSharpCompilation(

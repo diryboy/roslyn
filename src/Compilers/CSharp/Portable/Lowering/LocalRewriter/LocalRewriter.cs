@@ -25,11 +25,30 @@ namespace Microsoft.CodeAnalysis.CSharp
         private bool _sawAwaitInExceptionHandler;
         private readonly DiagnosticBag _diagnostics;
 
+        private readonly int _methodOrdinal;
+
         /// <summary>
         /// A lazily created delegate cache container of <see cref="DelegateCacheContainerKind.MethodScopedGeneric"/>.
         /// </summary>
-        private TypeOrMethodScopedDelegateCacheContainer _methodScopedDelegateCacheContainer;
-        private readonly int _methodOrdinal;
+        private TypeOrMethodScopedDelegateCacheContainer _lazyMethodScopedGenericDelegateCacheContainer;
+        private TypeOrMethodScopedDelegateCacheContainer MethodScopedGenericDelegateCacheContainer
+        {
+            get
+            {
+                var container = _lazyMethodScopedGenericDelegateCacheContainer;
+
+                if ((object)container == null)
+                {
+                    _lazyMethodScopedGenericDelegateCacheContainer
+                        = container
+                        = new TypeOrMethodScopedDelegateCacheContainer(_factory.TopLevelMethod, _methodOrdinal, _factory.ModuleBuilderOpt.CurrentGenerationOrdinal);
+
+                    _factory.AddNestedType(container);
+                }
+
+                return container;
+            }
+        }
 
         private LocalRewriter(
             CSharpCompilation compilation,

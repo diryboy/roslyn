@@ -29,7 +29,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             SortKey = sortkey;
         }
 
-        /// <remarks>This method is only intended to be called from <see cref="DelegateCacheManager"/></remarks>.
+        /// <remarks>This method is only intended to be called from <see cref="ModuleScopedDelegateCacheManager"/></remarks>.
         internal void AssignName(string name)
         {
             Debug.Assert(name != null && _name == null, "Name should only be assigned once.");

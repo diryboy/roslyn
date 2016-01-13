@@ -174,7 +174,28 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// <summary>
         /// A lazily created delegate cache container of <see cref="DelegateCacheContainerKind.TypeScopedConcrete"/>.
         /// </summary>
-        internal TypeOrMethodScopedDelegateCacheContainer TypeScopedDelegateCacheContainerOpt { get; set; }
+        private TypeOrMethodScopedDelegateCacheContainer _lazyTypeScopedDelegateCacheContainer;
+        internal TypeOrMethodScopedDelegateCacheContainer TypeScopedDelegateCacheContainer
+        {
+            get
+            {
+                Debug.Assert(ModuleBuilderOpt != null);
+                Debug.Assert((object)_typeOpt != null);
+
+                var container = _lazyTypeScopedDelegateCacheContainer;
+
+                if ((object)container == null)
+                {
+                    _lazyTypeScopedDelegateCacheContainer
+                        = container
+                        = new TypeOrMethodScopedDelegateCacheContainer(_typeOpt, ModuleBuilderOpt.CurrentGenerationOrdinal);
+
+                    ModuleBuilderOpt.AddSynthesizedDefinition(_typeOpt, container);
+                }
+
+                return container;
+            }
+        }
 
         /// <summary> Free resources allocated for this method collection </summary>
         public void Free()

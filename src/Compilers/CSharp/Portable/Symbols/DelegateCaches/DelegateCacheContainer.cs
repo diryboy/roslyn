@@ -28,6 +28,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             ContainerKind = kind;
         }
 
-        internal abstract FieldSymbol ObtainCacheField(SyntheticBoundNodeFactory factory, TypeSymbol type, MethodSymbol targetMethod);
+        internal abstract FieldSymbol ObtainCacheField(SyntheticBoundNodeFactory factory, NamedTypeSymbol delegateType, MethodSymbol targetMethod);
     }
 }

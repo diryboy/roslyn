@@ -1311,8 +1311,9 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(type.IsDelegateType());
             Debug.Assert((object)targetMethod != null);
 
-            var cacheContainer = ObtainCacheContainer(type, targetMethod);
-            var cacheField = cacheContainer.ObtainCacheField(_factory, type, targetMethod);
+            var delegateType = (NamedTypeSymbol)type;
+            var cacheContainer = ObtainCacheContainer(delegateType, targetMethod);
+            var cacheField = cacheContainer.ObtainCacheField(_factory, delegateType, targetMethod);
 
             if (cacheContainer.ContainerKind == DelegateCacheContainerKind.MethodScopedGeneric)
             {
@@ -1335,43 +1336,22 @@ namespace Microsoft.CodeAnalysis.CSharp
             return rewrittenNode;
         }
 
-        private DelegateCacheContainer ObtainCacheContainer(TypeSymbol delegateType, MethodSymbol targetMethod)
+        private DelegateCacheContainer ObtainCacheContainer(NamedTypeSymbol delegateType, MethodSymbol targetMethod)
         {
-            var currentMethod = _factory.TopLevelMethod;
-            var containerKind = ChooseDelegateCacheContainerKind(currentMethod, delegateType, targetMethod);
-
-            if (containerKind == DelegateCacheContainerKind.ModuleScopedConcrete)
+            switch (ChooseDelegateCacheContainerKind(_factory.TopLevelMethod, delegateType, targetMethod))
             {
-                var compilation = _factory.Compilation;
-                return compilation.DelegateCacheManager.ObtainModuleScopedContainer(compilation, delegateType);
+                case DelegateCacheContainerKind.ModuleScopedConcrete:
+                    return _factory.ModuleBuilderOpt.DelegateCacheManager.ObtainContainer(delegateType);
+                case DelegateCacheContainerKind.TypeScopedConcrete:
+                    return _factory.CompilationState.TypeScopedDelegateCacheContainer;
+                case DelegateCacheContainerKind.MethodScopedGeneric:
+                    return MethodScopedGenericDelegateCacheContainer;
+                default:
+                    throw ExceptionUtilities.Unreachable;
             }
-
-            if (containerKind == DelegateCacheContainerKind.TypeScopedConcrete)
-            {
-                var typeCompilationState = _factory.CompilationState;
-                var tsContainer = typeCompilationState.TypeScopedDelegateCacheContainerOpt;
-                if ((object)tsContainer == null)
-                {
-                    typeCompilationState.TypeScopedDelegateCacheContainerOpt
-                        = tsContainer
-                        = new TypeOrMethodScopedDelegateCacheContainer(currentMethod.ContainingType, _factory.ModuleBuilderOpt.CurrentGenerationOrdinal);
-                    _factory.AddNestedType(tsContainer);
-                }
-                return tsContainer;
-            }
-
-            var msContainer = _methodScopedDelegateCacheContainer;
-            if ((object)msContainer == null)
-            {
-                _methodScopedDelegateCacheContainer
-                    = msContainer
-                    = new TypeOrMethodScopedDelegateCacheContainer(currentMethod, _methodOrdinal, _factory.ModuleBuilderOpt.CurrentGenerationOrdinal);
-                _factory.AddNestedType(msContainer);
-            }
-            return msContainer;
         }
 
-        private static DelegateCacheContainerKind ChooseDelegateCacheContainerKind(MethodSymbol currentMethod, TypeSymbol delegateType, MethodSymbol targetMethod)
+        private static DelegateCacheContainerKind ChooseDelegateCacheContainerKind(MethodSymbol currentMethod, NamedTypeSymbol delegateType, MethodSymbol targetMethod)
         {
             var fullyConcreteChecker = FullyConcreteChecker.Instance;
             if (fullyConcreteChecker.Visit(delegateType) && fullyConcreteChecker.Visit(targetMethod))

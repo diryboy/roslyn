@@ -12,7 +12,7 @@ using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.CSharp.Symbols
 {
-    using FieldSymbolsCollection = SmallDictionary<ValueTuple<TypeSymbol, MethodSymbol>, FieldSymbol>;
+    using FieldSymbolsCollection = SmallDictionary<ValueTuple<NamedTypeSymbol, MethodSymbol>, FieldSymbol>;
 
     internal class TypeOrMethodScopedDelegateCacheContainer : DelegateCacheContainer
     {
@@ -58,7 +58,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             _typeMap = TypeMap.Empty.WithAlphaRename(currentMethod, this, out _typeParameters);
         }
 
-        internal override FieldSymbol ObtainCacheField(SyntheticBoundNodeFactory factory, TypeSymbol delegateType, MethodSymbol targetMethod)
+        internal override FieldSymbol ObtainCacheField(SyntheticBoundNodeFactory factory, NamedTypeSymbol delegateType, MethodSymbol targetMethod)
         {
             var key = ValueTuple.Create(delegateType, targetMethod);
 
