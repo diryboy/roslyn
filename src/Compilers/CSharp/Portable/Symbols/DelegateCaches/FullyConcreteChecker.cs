@@ -69,7 +69,18 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         public override bool VisitDynamicType(DynamicTypeSymbol symbol) => true;
 
-        public override bool VisitPointerType(PointerTypeSymbol symbol) => true; // Func<int*[]>
+        public override bool VisitPointerType(PointerTypeSymbol symbol)
+        {
+            // Func<int*[]> is a good example why here is reachable.
+            // Although PointedAtType cannot be generic by code, we don't know what can come from metadata.
+
+            if (!Visit(symbol.PointedAtType))
+            {
+                return false;
+            }
+
+            return true;
+        }
 
         public override bool VisitNamespace(NamespaceSymbol symbol)
         {

@@ -1354,21 +1354,27 @@ namespace Microsoft.CodeAnalysis.CSharp
 
         private static DelegateCacheContainerKind ChooseDelegateCacheContainerKind(MethodSymbol currentMethod, NamedTypeSymbol delegateType, MethodSymbol targetMethod)
         {
-            // First, if delegateType and targetMethod are both concrete to teeth, consider a module scoped cache container, because
+            // First, if delegateType and targetMethod are both concrete to the teeth, consider a module scoped cache container, because
             // a. targetMethod could be somewhere outside of currentMethod.ContainingType, there might be another method somewhere else want to use this cache
             // b. currentMethod.ContainingType or/and its ancestors could be generic, making the container type scoped could possibly cause multiple instances at runtime
             // There are cases when targetMethod or/and delegateType being private or only visible inside currentMethod.ContainingType by code, though
+
+            // If the currentMethod and it's containing type and it's ancestors all the way up are concrete,
+            // then the delegate type and target method should be fully concrete.
+            if (currentMethod.Arity == 0 && !currentMethod.ContainingType.IsGenericType)
+            {
+                return DelegateCacheContainerKind.ModuleScopedConcrete;
+            }
+
+            // Although the currentMethod or it's containing types may be generic, the delegateType and targetMethod may not. Let's find out.
             var fullyConcreteChecker = FullyConcreteChecker.Instance;
             if (fullyConcreteChecker.Visit(delegateType) && fullyConcreteChecker.Visit(targetMethod))
             {
                 return DelegateCacheContainerKind.ModuleScopedConcrete;
             }
 
-            // Now we're looking at generic situations here, all the possible type parameters that acts as type arguments
-            // needed to construct the delegateType or targetMethod come from:
-            // a. currentMethod.TypeParameters, count >= 0;
-            // b. currentMethod(.ContainingType)+.TypeParameters, total count >= 0.
-            // c. count of type parameters from (a + b) > 0
+            // Now we're sure the conversion involve generics. All the possible type parameters that act as type arguments
+            // needed to construct the delegateType or targetMethod come from either the current method or it's containing types
 
             // So obviously,
             if (currentMethod.Arity == 0)
@@ -1377,13 +1383,13 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
 
             // Then we need to really check if currentMethod.TypeParameters are involved.
-            // If so, we have to "mock" the type parameters of the currentMethod as type parameters of the cache container.
-            // So we can later use them to define the delegate type of the fields of the cache container.
-            // That being said, we need a generic container here.
             var typeParams = currentMethod.TypeParameters;
             var typeParamUsageChecker = TypeParameterUsageChecker.Instance;
             if (typeParamUsageChecker.Visit(delegateType, typeParams) || typeParamUsageChecker.Visit(targetMethod, typeParams))
             {
+                // If so, we have to "mock" the type parameters of the currentMethod as type parameters of the cache container.
+                // So we can later use them to define the delegate type of the fields of the cache container.
+                // That being said, we need a generic container here.
                 return DelegateCacheContainerKind.MethodScopedGeneric;
             }
 

@@ -58,6 +58,19 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return Visit(symbol.ContainingType, argument);
         }
 
+        public override bool VisitPointerType(PointerTypeSymbol symbol, TypeParams argument)
+        {
+            // Func<int*[]> is a good example why here is reachable.
+            // Although PointedAtType cannot be generic by code, we don't know what can come from metadata.
+
+            if (Visit(symbol.PointedAtType, argument))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         public override bool VisitAssembly(AssemblySymbol symbol, TypeParams argument)
         {
             throw ExceptionUtilities.Unreachable;
