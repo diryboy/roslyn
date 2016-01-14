@@ -46,11 +46,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
         private SymbolDisplayFormat _testDataKeyFormat;
         private SymbolDisplayFormat _testDataOperatorKeyFormat;
 
-        /// <summary>
-        /// Manages cache containers of <see cref="DelegateCacheContainerKind.ModuleScopedConcrete"/> created for method group conversion from static methods.
-        /// </summary>
-        internal ModuleScopedDelegateCacheManager DelegateCacheManager { get; }
-
         internal PEModuleBuilder(
             SourceModuleSymbol sourceModule,
             EmitOptions emitOptions,
@@ -126,6 +121,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Emit
 
         // C# doesn't allow to define default namespace for compilation.
         protected override string DefaultNamespace => null;
+
+        /// <summary>
+        /// Manages cache containers of <see cref="DelegateCacheContainerKind.ModuleScopedConcrete"/> created for method group conversion from static methods.
+        /// </summary>
+        internal ModuleScopedDelegateCacheManager DelegateCacheManager { get; }
 
         protected override IEnumerable<Cci.IAssemblyReference> GetAssemblyReferencesFromAddedModules(DiagnosticBag diagnostics)
         {

@@ -68,6 +68,11 @@ namespace Microsoft.CodeAnalysis.CSharp
         public LambdaFrame StaticLambdaFrame;
 
         /// <summary>
+        /// A lazily created delegate cache container of <see cref="DelegateCacheContainerKind.TypeScopedConcrete"/>.
+        /// </summary>
+        private TypeOrMethodScopedDelegateCacheContainer _lazyTypeScopedDelegateCacheContainer;
+
+        /// <summary>
         /// A graph of method->method references for this(...) constructor initializers.
         /// Used to detect and report initializer cycles.
         /// </summary>
@@ -158,23 +163,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             get { return _wrappers == null ? 0 : _wrappers.Count; }
         }
 
-        /// <summary> 
-        /// Get a 'wrapper' method for the original one. 
-        /// </summary>
-        /// <remarks>
-        /// Wrapper methods are created for base access of base type virtual methods from 
-        /// other classes (like those created for lambdas...).
-        /// </remarks>
-        public MethodSymbol GetMethodWrapper(MethodSymbol method)
-        {
-            MethodSymbol wrapper = null;
-            return _wrappers != null && _wrappers.TryGetValue(method, out wrapper) ? wrapper : null;
-        }
-
-        /// <summary>
-        /// A lazily created delegate cache container of <see cref="DelegateCacheContainerKind.TypeScopedConcrete"/>.
-        /// </summary>
-        private TypeOrMethodScopedDelegateCacheContainer _lazyTypeScopedDelegateCacheContainer;
         internal TypeOrMethodScopedDelegateCacheContainer TypeScopedDelegateCacheContainer
         {
             get
@@ -195,6 +183,19 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 return container;
             }
+        }
+
+        /// <summary> 
+        /// Get a 'wrapper' method for the original one. 
+        /// </summary>
+        /// <remarks>
+        /// Wrapper methods are created for base access of base type virtual methods from 
+        /// other classes (like those created for lambdas...).
+        /// </remarks>
+        public MethodSymbol GetMethodWrapper(MethodSymbol method)
+        {
+            MethodSymbol wrapper = null;
+            return _wrappers != null && _wrappers.TryGetValue(method, out wrapper) ? wrapper : null;
         }
 
         /// <summary> Free resources allocated for this method collection </summary>

@@ -19,14 +19,14 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
     {
         internal readonly DelegateCacheContainerKind ContainerKind;
 
-        public override bool IsStatic => true;
-
-        public override TypeKind TypeKind => TypeKind.Class;
-
         protected DelegateCacheContainer(DelegateCacheContainerKind kind)
         {
             ContainerKind = kind;
         }
+
+        public override bool IsStatic => true;
+
+        public override TypeKind TypeKind => TypeKind.Class;
 
         internal abstract FieldSymbol ObtainCacheField(SyntheticBoundNodeFactory factory, NamedTypeSymbol delegateType, MethodSymbol targetMethod);
     }

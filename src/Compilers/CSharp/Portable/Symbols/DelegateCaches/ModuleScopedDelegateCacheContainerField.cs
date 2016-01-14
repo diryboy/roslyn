@@ -17,11 +17,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// Why the _name is not readonly? Why the SortKey?
         /// See comments above <see cref="ModuleScopedDelegateCacheContainer._name"/>
         private string _name;
-        public override string Name => _name;
-        public string SortKey { get; }
-
-        // Save this value for a debug friendly name.
-        public string TargetMethodName { get; }
 
         public ModuleScopedDelegateCacheContainerField(DelegateCacheContainer container, string targetMethodName, TypeSymbol type, string sortkey)
             : base(container, type, sortkey, isPublic: true, isReadOnly: false, isStatic: true)
@@ -29,6 +24,13 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             TargetMethodName = targetMethodName;
             SortKey = sortkey;
         }
+
+        public override string Name => _name;
+
+        public string SortKey { get; }
+
+        // Save this value for a debug friendly name.
+        public string TargetMethodName { get; }
 
         /// <remarks>This method is only intended to be called from <see cref="ModuleScopedDelegateCacheContainer"/></remarks>.
         internal void AssignName(string name)

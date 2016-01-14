@@ -17,15 +17,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
     internal class TypeOrMethodScopedDelegateCacheContainer : DelegateCacheContainer
     {
         private readonly Symbol _containingSymbol;
-        public override Symbol ContainingSymbol => _containingSymbol;
+
+        private readonly string _name;
 
         private int _delegateFields;
         private readonly FieldSymbolsCollection _delegateFieldsDict = new FieldSymbolsCollection();
-
-        public override Accessibility DeclaredAccessibility => Accessibility.Private;
-
-        private readonly string _name;
-        public override string Name => _name;
 
         /// <summary>
         /// Contains the mapping from current method's type parameters to this container's type parameters.
@@ -34,7 +30,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         private readonly TypeMap _typeMap;
 
         private readonly ImmutableArray<TypeParameterSymbol> _typeParameters;
-        public override ImmutableArray<TypeParameterSymbol> TypeParameters => _typeParameters;
 
         /// <summary>Creates a type scoped concrete delegate cache container.</summary>
         internal TypeOrMethodScopedDelegateCacheContainer(TypeSymbol containingType, int generation)
@@ -57,6 +52,14 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             _containingSymbol = currentMethod.ContainingType;
             _typeMap = TypeMap.Empty.WithAlphaRename(currentMethod, this, out _typeParameters);
         }
+
+        public override Symbol ContainingSymbol => _containingSymbol;
+
+        public override Accessibility DeclaredAccessibility => Accessibility.Private;
+
+        public override string Name => _name;
+
+        public override ImmutableArray<TypeParameterSymbol> TypeParameters => _typeParameters;
 
         internal override FieldSymbol ObtainCacheField(SyntheticBoundNodeFactory factory, NamedTypeSymbol delegateType, MethodSymbol targetMethod)
         {

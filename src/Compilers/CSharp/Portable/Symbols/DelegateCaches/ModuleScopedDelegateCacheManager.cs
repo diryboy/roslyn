@@ -20,6 +20,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         private ModuleScopedContainerCollection _lazyModuleScopedContainers;
 
+        public ModuleScopedDelegateCacheManager(PEModuleBuilder moduleBuilder)
+        {
+            _moduleBuilder = moduleBuilder;
+        }
+
         private ModuleScopedContainerCollection ModuleScopedContainers
         {
             get
@@ -31,11 +36,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
                 return _lazyModuleScopedContainers;
             }
-        }
-
-        public ModuleScopedDelegateCacheManager(PEModuleBuilder moduleBuilder)
-        {
-            _moduleBuilder = moduleBuilder;
         }
 
         internal DelegateCacheContainer ObtainContainer(NamedTypeSymbol delegateType)

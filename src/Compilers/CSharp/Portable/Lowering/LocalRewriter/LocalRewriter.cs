@@ -31,24 +31,6 @@ namespace Microsoft.CodeAnalysis.CSharp
         /// A lazily created delegate cache container of <see cref="DelegateCacheContainerKind.MethodScopedGeneric"/>.
         /// </summary>
         private TypeOrMethodScopedDelegateCacheContainer _lazyMethodScopedGenericDelegateCacheContainer;
-        private TypeOrMethodScopedDelegateCacheContainer MethodScopedGenericDelegateCacheContainer
-        {
-            get
-            {
-                var container = _lazyMethodScopedGenericDelegateCacheContainer;
-
-                if ((object)container == null)
-                {
-                    _lazyMethodScopedGenericDelegateCacheContainer
-                        = container
-                        = new TypeOrMethodScopedDelegateCacheContainer(_factory.TopLevelMethod, _methodOrdinal, _factory.ModuleBuilderOpt.CurrentGenerationOrdinal);
-
-                    _factory.AddNestedType(container);
-                }
-
-                return container;
-            }
-        }
 
         private LocalRewriter(
             CSharpCompilation compilation,
@@ -117,6 +99,24 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
         }
 
+        private TypeOrMethodScopedDelegateCacheContainer MethodScopedGenericDelegateCacheContainer
+        {
+            get
+            {
+                var container = _lazyMethodScopedGenericDelegateCacheContainer;
+
+                if ((object)container == null)
+                {
+                    _lazyMethodScopedGenericDelegateCacheContainer
+                        = container
+                        = new TypeOrMethodScopedDelegateCacheContainer(_factory.TopLevelMethod, _methodOrdinal, _factory.ModuleBuilderOpt.CurrentGenerationOrdinal);
+
+                    _factory.AddNestedType(container);
+                }
+
+                return container;
+            }
+        }
 
         // TODO(ngafter): This is a workaround.  Any piece of code that inserts a prologue
         // should be careful to insert any necessary sequence points too.

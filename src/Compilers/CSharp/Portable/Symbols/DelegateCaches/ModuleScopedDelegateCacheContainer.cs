@@ -25,12 +25,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         // When all methods are compiled thus all containers are created, and when things are happening serially before emit, 
         // we sort the containers by their sort key, then use the indices to name them.
         private string _name;
-        public override string Name => _name;
-        public string SortKey { get; }
 
         private bool _frozen;
 
-        private static readonly SymbolDisplayFormat MethodSortKeyFormat = new SymbolDisplayFormat
+        private static readonly SymbolDisplayFormat s_methodSortKeyFormat = new SymbolDisplayFormat
         (
             globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Included,
             typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
@@ -41,14 +39,10 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         );
 
         private readonly NamedTypeSymbol _delegateType;
+
         private readonly FieldSymbolsCollection _delegateFields = new FieldSymbolsCollection();
 
         private readonly Symbol _containingSymbol;
-        public override Symbol ContainingSymbol => _containingSymbol;
-
-        public override Accessibility DeclaredAccessibility => Accessibility.Internal;
-
-        public override ImmutableArray<TypeParameterSymbol> TypeParameters => ImmutableArray<TypeParameterSymbol>.Empty;
 
         /// <remarks>This is only intended to be used from <see cref="ModuleScopedDelegateCacheManager"/></remarks>
         internal ModuleScopedDelegateCacheContainer(NamespaceSymbol globalNamespace, NamedTypeSymbol delegateType)
@@ -59,12 +53,22 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             SortKey = delegateType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         }
 
+        public override Symbol ContainingSymbol => _containingSymbol;
+
+        public override Accessibility DeclaredAccessibility => Accessibility.Internal;
+
+        public override string Name => _name;
+
+        public string SortKey { get; }
+
+        public override ImmutableArray<TypeParameterSymbol> TypeParameters => ImmutableArray<TypeParameterSymbol>.Empty;
+
         internal override FieldSymbol ObtainCacheField(SyntheticBoundNodeFactory factory, NamedTypeSymbol delegateType, MethodSymbol targetMethod)
         {
             Debug.Assert(!_frozen);
             Debug.Assert(_delegateType == delegateType);
 
-            return _delegateFields.GetOrAdd(targetMethod, m => new ModuleScopedDelegateCacheContainerField(this, m.Name, _delegateType, m.ToDisplayString(MethodSortKeyFormat)));
+            return _delegateFields.GetOrAdd(targetMethod, m => new ModuleScopedDelegateCacheContainerField(this, m.Name, _delegateType, m.ToDisplayString(s_methodSortKeyFormat)));
         }
 
         internal void AssignNamesAndFreeze(string moduleId, int index, int generation)
