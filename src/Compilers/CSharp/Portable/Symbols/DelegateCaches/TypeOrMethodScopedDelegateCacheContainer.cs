@@ -83,8 +83,14 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
 
             field = new SynthesizedFieldSymbol(this, fieldType, fieldName, isPublic: true, isStatic: true);
-            _delegateFieldsDict.Add(key, field);
             factory.AddField(this, field);
+
+            if (ContainerKind == DelegateCacheContainerKind.MethodScopedGeneric)
+            {
+                field = field.AsMember(this.Construct(factory.TopLevelMethod.TypeParameters));
+            }
+
+            _delegateFieldsDict.Add(key, field);
 
             return field;
         }

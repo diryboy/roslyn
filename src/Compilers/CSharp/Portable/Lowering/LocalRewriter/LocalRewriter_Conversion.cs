@@ -1321,11 +1321,6 @@ namespace Microsoft.CodeAnalysis.CSharp
             var cacheContainer = ObtainCacheContainer(delegateType, targetMethod);
             var cacheField = cacheContainer.ObtainCacheField(_factory, delegateType, targetMethod);
 
-            if (cacheContainer.ContainerKind == DelegateCacheContainerKind.MethodScopedGeneric)
-            {
-                cacheField = cacheField.AsMember(cacheContainer.Construct(_factory.TopLevelMethod.TypeParameters));
-            }
-
             var orgSyntax = _factory.Syntax;
             _factory.Syntax = syntax;
 
