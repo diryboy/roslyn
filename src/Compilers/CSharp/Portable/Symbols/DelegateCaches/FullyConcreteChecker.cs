@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
 
 using System;
+using System.Collections.Immutable;
 using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.CSharp.Symbols
@@ -16,7 +17,20 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         public override bool VisitAlias(AliasSymbol symbol) => true;
 
-        public override bool VisitArrayType(ArrayTypeSymbol symbol) => Visit(symbol.ElementType);
+        public override bool VisitArrayType(ArrayTypeSymbol symbol)
+        {
+            if (!Visit(symbol.ElementType))
+            {
+                return false;
+            }
+
+            if (!VisitCustomModifiers(symbol.CustomModifiers))
+            {
+                return false;
+            }
+
+            return true;
+        }
 
         public override bool VisitNamedType(NamedTypeSymbol symbol)
         {
@@ -38,6 +52,17 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 if (!Visit(typeArg))
                 {
                     return false;
+                }
+            }
+
+            if (symbol.HasTypeArgumentsCustomModifiers)
+            {
+                foreach (var customModifiers in symbol.TypeArgumentsCustomModifiers)
+                {
+                    if (!VisitCustomModifiers(customModifiers))
+                    {
+                        return false;
+                    }
                 }
             }
 
@@ -72,11 +97,29 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         public override bool VisitPointerType(PointerTypeSymbol symbol)
         {
             // Func<int*[]> is a good example why here is reachable.
-            // Although PointedAtType cannot be generic by code, we don't know what can come from metadata.
 
+            // Although PointedAtType cannot be generic by code, we don't know what can come from metadata.
             if (!Visit(symbol.PointedAtType))
             {
                 return false;
+            }
+
+            if (!VisitCustomModifiers(symbol.CustomModifiers))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool VisitCustomModifiers(ImmutableArray<CustomModifier> customModifiers)
+        {
+            foreach (var customModifier in customModifiers)
+            {
+                if (!Visit((Symbol)customModifier.Modifier))
+                {
+                    return false;
+                }
             }
 
             return true;

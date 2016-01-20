@@ -1052,7 +1052,7 @@ class C
 using System;
 class C
 {
-    delegate void MyAction<T>();
+    public delegate void MyAction<T>();
 
     public static void Main(string[] args)
     {
@@ -1448,6 +1448,43 @@ class E<K>
   IL_0024:  callvirt   ""T D<T, M>.MyFunc.Invoke(M)""
   IL_0029:  pop
   IL_002a:  ret
+}
+");
+        }
+
+        [Fact]
+        public void CacheImplicitConversions_TypeScoped8()
+        {
+            var source = @"
+using System;
+class C
+{
+    delegate void MyAction<T>();
+
+    public static void Main(string[] args)
+    {
+        MyAction<int> t = Target;
+        t();
+    }
+
+    static void Target() { Console.WriteLine(""PASS""); }
+}
+";
+            var compilation = CompileAndVerify(source, expectedOutput: PASS).VerifyIL("C.Main", @"
+{
+  // Code size       33 (0x21)
+  .maxstack  2
+  IL_0000:  ldsfld     ""C.MyAction<int> C.<>v.<Target>w""
+  IL_0005:  dup
+  IL_0006:  brtrue.s   IL_001b
+  IL_0008:  pop
+  IL_0009:  ldnull
+  IL_000a:  ldftn      ""void C.Target()""
+  IL_0010:  newobj     ""C.MyAction<int>..ctor(object, System.IntPtr)""
+  IL_0015:  dup
+  IL_0016:  stsfld     ""C.MyAction<int> C.<>v.<Target>w""
+  IL_001b:  callvirt   ""void C.MyAction<int>.Invoke()""
+  IL_0020:  ret
 }
 ");
         }

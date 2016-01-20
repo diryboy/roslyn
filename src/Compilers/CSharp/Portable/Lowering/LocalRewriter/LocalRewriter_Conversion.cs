@@ -1357,23 +1357,27 @@ namespace Microsoft.CodeAnalysis.CSharp
             // First, if delegateType and targetMethod are both concrete to the teeth, consider a module scoped cache container, because
             // a. targetMethod could be somewhere outside of currentMethod.ContainingType, there might be another method somewhere else want to use this cache
             // b. currentMethod.ContainingType or/and its ancestors could be generic, making the container type scoped could possibly cause multiple instances at runtime
-            // There are cases when targetMethod or/and delegateType being private or only visible inside currentMethod.ContainingType by code, though
 
-            // If the currentMethod and it's containing type and it's ancestors all the way up are concrete,
-            // then the delegate type and target method should be fully concrete.
-            if (currentMethod.Arity == 0 && !currentMethod.ContainingType.IsGenericType)
+            // However, there are cases when targetMethod or/and delegateType being private or only visible inside currentMethod.ContainingType by code.
+            // It's not a problem that targetMethod being not visible, but delegateType could. Even it seems to work, it's not worth the risk.
+            if (Symbol.IsSymbolAccessible(delegateType, currentMethod.ContainingAssembly))
             {
-                return DelegateCacheContainerKind.ModuleScopedConcrete;
+                // If the currentMethod and it's containing type and it's ancestors all the way up are concrete,
+                // then the delegate type and target method should be fully concrete.
+                if (currentMethod.Arity == 0 && !currentMethod.ContainingType.IsGenericType)
+                {
+                    return DelegateCacheContainerKind.ModuleScopedConcrete;
+                }
+
+                // Although the currentMethod or it's containing types may be generic, the delegateType and targetMethod may not. Let's find out.
+                var fullyConcreteChecker = FullyConcreteChecker.Instance;
+                if (fullyConcreteChecker.Visit(delegateType) && fullyConcreteChecker.Visit(targetMethod))
+                {
+                    return DelegateCacheContainerKind.ModuleScopedConcrete;
+                }
             }
 
-            // Although the currentMethod or it's containing types may be generic, the delegateType and targetMethod may not. Let's find out.
-            var fullyConcreteChecker = FullyConcreteChecker.Instance;
-            if (fullyConcreteChecker.Visit(delegateType) && fullyConcreteChecker.Visit(targetMethod))
-            {
-                return DelegateCacheContainerKind.ModuleScopedConcrete;
-            }
-
-            // Now we're sure the conversion involve generics. All the possible type parameters that act as type arguments
+            // Now the conversion could involve generics. All the possible type parameters that act as type arguments
             // needed to construct the delegateType or targetMethod come from either the current method or it's containing types
 
             // So obviously,

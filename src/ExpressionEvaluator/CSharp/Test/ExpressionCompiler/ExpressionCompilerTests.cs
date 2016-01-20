@@ -4107,6 +4107,45 @@ class C
         public void StaticDelegate0()
         {
             var source =
+@"class C
+{
+    static void Target()
+    {
+    }
+    static void Invoke(System.Action d)
+    {
+    }
+    static void Test()
+    {
+    }
+}";
+            var testData = Evaluate(
+                source,
+                OutputKind.DynamicallyLinkedLibrary,
+                methodName: "C.Test",
+                expr: "Invoke(Target)");
+            testData.GetMethodData("<>x.<>m0").VerifyIL(
+@"{
+  // Code size       33 (0x21)
+  .maxstack  2
+  IL_0000:  ldsfld     ""System.Action <>v.<Target>w""
+  IL_0005:  dup
+  IL_0006:  brtrue.s   IL_001b
+  IL_0008:  pop
+  IL_0009:  ldnull
+  IL_000a:  ldftn      ""void C.Target()""
+  IL_0010:  newobj     ""System.Action..ctor(object, System.IntPtr)""
+  IL_0015:  dup
+  IL_0016:  stsfld     ""System.Action <>v.<Target>w""
+  IL_001b:  call       ""void C.Invoke(System.Action)""
+  IL_0020:  ret
+}");
+        }
+
+        [Fact]
+        public void StaticDelegate1()
+        {
+            var source =
 @"delegate void D();
 class C
 {
@@ -4129,7 +4168,7 @@ class C
 @"{
   // Code size       33 (0x21)
   .maxstack  2
-  IL_0000:  ldsfld     ""D <>v.<Target>w""
+  IL_0000:  ldsfld     ""D <>x.<>v.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -4137,14 +4176,14 @@ class C
   IL_000a:  ldftn      ""void C.Target()""
   IL_0010:  newobj     ""D..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""D <>v.<Target>w""
+  IL_0016:  stsfld     ""D <>x.<>v.<Target>w""
   IL_001b:  call       ""void C.Invoke(D)""
   IL_0020:  ret
 }");
         }
 
         [Fact]
-        public void StaticDelegate1()
+        public void StaticDelegate2()
         {
             var source =
 @"delegate void D<V>();
@@ -4184,7 +4223,7 @@ class C<T>
         }
 
         [Fact]
-        public void StaticDelegate2()
+        public void StaticDelegate3()
         {
             var source =
 @"delegate void D<A>();

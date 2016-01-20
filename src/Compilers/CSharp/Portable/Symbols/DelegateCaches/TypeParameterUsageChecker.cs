@@ -17,7 +17,20 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         public override bool VisitTypeParameter(TypeParameterSymbol symbol, TypeParams argument) => argument.Contains(symbol);
 
-        public override bool VisitArrayType(ArrayTypeSymbol symbol, TypeParams argument) => Visit(symbol.ElementType, argument);
+        public override bool VisitArrayType(ArrayTypeSymbol symbol, TypeParams argument)
+        {
+            if (Visit(symbol.ElementType, argument))
+            {
+                return true;
+            }
+
+            if (VisitCustomModifiers(symbol.CustomModifiers, argument))
+            {
+                return true;
+            }
+
+            return false;
+        }
 
         public override bool VisitNamedType(NamedTypeSymbol symbol, TypeParams argument)
         {
@@ -42,6 +55,17 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 }
             }
 
+            if (symbol.HasTypeArgumentsCustomModifiers)
+            {
+                foreach (var customModifiers in symbol.TypeArgumentsCustomModifiers)
+                {
+                    if (VisitCustomModifiers(customModifiers, argument))
+                    {
+                        return true;
+                    }
+                }
+            }
+
             return Visit(symbol.ContainingType, argument);
         }
 
@@ -61,11 +85,29 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         public override bool VisitPointerType(PointerTypeSymbol symbol, TypeParams argument)
         {
             // Func<int*[]> is a good example why here is reachable.
-            // Although PointedAtType cannot be generic by code, we don't know what can come from metadata.
 
+            // Although PointedAtType cannot be generic by code, we don't know what can come from metadata.
             if (Visit(symbol.PointedAtType, argument))
             {
                 return true;
+            }
+
+            if (VisitCustomModifiers(symbol.CustomModifiers, argument))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool VisitCustomModifiers(ImmutableArray<CustomModifier> customModifiers, TypeParams argument)
+        {
+            foreach (var customModifier in customModifiers)
+            {
+                if (Visit((Symbol)customModifier.Modifier, argument))
+                {
+                    return true;
+                }
             }
 
             return false;
