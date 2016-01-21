@@ -81,6 +81,11 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 return ImmutableArray<ModuleScopedDelegateCacheContainer>.Empty;
             }
 
+            foreach (var container in containers.Values)
+            {
+                container.EnsureSortKey();
+            }
+
             var builder = ArrayBuilder<ModuleScopedDelegateCacheContainer>.GetInstance();
 
             builder.AddRange(containers.Values);
@@ -89,6 +94,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return builder.ToImmutableAndFree();
         }
 
-        public int Compare(ModuleScopedDelegateCacheContainer x, ModuleScopedDelegateCacheContainer y) => String.CompareOrdinal(x.SortKey, y.SortKey);
+        public int Compare(ModuleScopedDelegateCacheContainer x, ModuleScopedDelegateCacheContainer y) => _moduleBuilder.Compilation.CompareSourceLocations(x.SortKey, y.SortKey);
     }
 }

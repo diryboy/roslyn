@@ -1318,11 +1318,11 @@ namespace Microsoft.CodeAnalysis.CSharp
             Debug.Assert(delegateType.IsDelegateType());
             Debug.Assert((object)targetMethod != null);
 
-            var cacheContainer = ObtainCacheContainer(delegateType, targetMethod);
-            var cacheField = cacheContainer.ObtainCacheField(_factory, delegateType, targetMethod);
-
             var orgSyntax = _factory.Syntax;
             _factory.Syntax = syntax;
+
+            var cacheContainer = ObtainCacheContainer(delegateType, targetMethod);
+            var cacheField = cacheContainer.ObtainCacheField(_factory, delegateType, targetMethod);
 
             var boundCacheField = _factory.Field(null, cacheField);
             var boundDelegateCreation = new BoundDelegateCreationExpression(syntax, operand, targetMethod, isExtensionMethod: false, type: delegateType)

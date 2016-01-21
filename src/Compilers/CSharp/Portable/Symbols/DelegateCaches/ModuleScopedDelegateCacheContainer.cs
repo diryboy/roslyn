@@ -19,24 +19,16 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
     /// </summary>
     internal class ModuleScopedDelegateCacheContainer : DelegateCacheContainer, IComparer<ModuleScopedDelegateCacheContainerField>
     {
-        // Why the _name is not readonly? Why the SortKey?
+        // Why the _name is not readonly? Why the _sortKey?
         // The container is a top level type, and the compilation can be parallel.
-        // To ensure simple & deterministic output, we need a unique and deterministic sort key when it's created.
+        // To ensure simple & deterministic output, we need a unique and deterministic sort key.
         // When all methods are compiled thus all containers are created, and when things are happening serially before emit, 
-        // we sort the containers by their sort key, then use the indices to name them.
+        // we sort the symbols using the smallest location of the conversion that caused them to be created, then use the indices to name them.
         private string _name;
 
-        private bool _frozen;
+        private Location _sortKey;
 
-        private static readonly SymbolDisplayFormat s_methodSortKeyFormat = new SymbolDisplayFormat
-        (
-            globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Included,
-            typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
-            genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
-            memberOptions: SymbolDisplayMemberOptions.IncludeType | SymbolDisplayMemberOptions.IncludeParameters,
-            parameterOptions: SymbolDisplayParameterOptions.IncludeType,
-            miscellaneousOptions: SymbolDisplayMiscellaneousOptions.EscapeKeywordIdentifiers | SymbolDisplayMiscellaneousOptions.UseSpecialTypes
-        );
+        private bool _frozen;
 
         private readonly NamedTypeSymbol _delegateType;
 
@@ -50,7 +42,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         {
             _containingSymbol = globalNamespace;
             _delegateType = delegateType;
-            SortKey = delegateType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         }
 
         public override Symbol ContainingSymbol => _containingSymbol;
@@ -59,7 +50,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         public override string Name => _name;
 
-        public string SortKey { get; }
+        public Location SortKey => _sortKey;
 
         public override ImmutableArray<TypeParameterSymbol> TypeParameters => ImmutableArray<TypeParameterSymbol>.Empty;
 
@@ -68,7 +59,40 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             Debug.Assert(!_frozen);
             Debug.Assert(_delegateType == delegateType);
 
-            return _delegateFields.GetOrAdd(targetMethod, m => new ModuleScopedDelegateCacheContainerField(this, m.Name, _delegateType, m.ToDisplayString(s_methodSortKeyFormat)));
+            var field = _delegateFields.GetOrAdd(targetMethod, m => new ModuleScopedDelegateCacheContainerField(this, m.Name, _delegateType));
+
+            field.AddLocation(factory.Syntax.Location);
+
+            return field;
+        }
+
+        internal void EnsureSortKey()
+        {
+            Debug.Assert(HasFields);
+
+            if (_sortKey != null)
+            {
+                return;
+            }
+
+            Location sortKey = null;
+
+            foreach (var field in _delegateFields.Values)
+            {
+                field.EnsureSortKey();
+
+                if (sortKey == null)
+                {
+                    sortKey = field.SortKey;
+                }
+                else if (DeclaringCompilation.CompareSourceLocations(sortKey, field.SortKey) > 0)
+                {
+                    sortKey = field.SortKey;
+                }
+            }
+
+            Debug.Assert(sortKey != null);
+            _sortKey = sortKey;
         }
 
         internal void AssignNamesAndFreeze(string moduleId, int index, int generation)
@@ -90,7 +114,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         /// <remarks>The order should be fixed.</remarks>
         private ImmutableArray<ModuleScopedDelegateCacheContainerField> CollectAllCreatedFields()
         {
-            Debug.Assert(_delegateFields != null && _delegateFields.Count != 0);
+            Debug.Assert(HasFields);
+
+            foreach (var field in _delegateFields.Values)
+            {
+                field.EnsureSortKey();
+            }
 
             var builder = ArrayBuilder<ModuleScopedDelegateCacheContainerField>.GetInstance();
 
@@ -107,7 +136,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return CollectAllCreatedFields();
         }
 
-        public int Compare(ModuleScopedDelegateCacheContainerField x, ModuleScopedDelegateCacheContainerField y) => String.CompareOrdinal(x.SortKey, y.SortKey);
+        private bool HasFields => _delegateFields != null && _delegateFields.Count != 0;
+
+        public int Compare(ModuleScopedDelegateCacheContainerField x, ModuleScopedDelegateCacheContainerField y) => DeclaringCompilation.CompareSourceLocations(x.SortKey, y.SortKey);
 
         public override ImmutableArray<Symbol> GetMembers() => StaticCast<Symbol>.From(GetAllCreatedFields());
     }
