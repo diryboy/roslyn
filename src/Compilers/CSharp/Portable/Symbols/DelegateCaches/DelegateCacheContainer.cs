@@ -28,6 +28,6 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         public override TypeKind TypeKind => TypeKind.Class;
 
-        internal abstract FieldSymbol ObtainCacheField(SyntheticBoundNodeFactory factory, NamedTypeSymbol delegateType, MethodSymbol targetMethod);
+        internal abstract FieldSymbol GetOrAddCacheField(SyntheticBoundNodeFactory factory, NamedTypeSymbol delegateType, MethodSymbol targetMethod);
     }
 }

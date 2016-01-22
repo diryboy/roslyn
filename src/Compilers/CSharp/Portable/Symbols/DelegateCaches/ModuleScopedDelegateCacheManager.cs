@@ -38,7 +38,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
         }
 
-        internal DelegateCacheContainer ObtainContainer(NamedTypeSymbol delegateType)
+        internal DelegateCacheContainer GetOrAddContainer(NamedTypeSymbol delegateType)
         {
             Debug.Assert(!_frozen);
 

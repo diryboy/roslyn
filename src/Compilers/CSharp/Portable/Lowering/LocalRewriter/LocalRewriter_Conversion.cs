@@ -1321,8 +1321,8 @@ namespace Microsoft.CodeAnalysis.CSharp
             var orgSyntax = _factory.Syntax;
             _factory.Syntax = syntax;
 
-            var cacheContainer = ObtainCacheContainer(delegateType, targetMethod);
-            var cacheField = cacheContainer.ObtainCacheField(_factory, delegateType, targetMethod);
+            var cacheContainer = GetOrAddCacheContainer(delegateType, targetMethod);
+            var cacheField = cacheContainer.GetOrAddCacheField(_factory, delegateType, targetMethod);
 
             var boundCacheField = _factory.Field(null, cacheField);
             var boundDelegateCreation = new BoundDelegateCreationExpression(syntax, operand, targetMethod, isExtensionMethod: false, type: delegateType)
@@ -1337,12 +1337,12 @@ namespace Microsoft.CodeAnalysis.CSharp
             return rewrittenNode;
         }
 
-        private DelegateCacheContainer ObtainCacheContainer(NamedTypeSymbol delegateType, MethodSymbol targetMethod)
+        private DelegateCacheContainer GetOrAddCacheContainer(NamedTypeSymbol delegateType, MethodSymbol targetMethod)
         {
             switch (ChooseDelegateCacheContainerKind(_factory.TopLevelMethod, delegateType, targetMethod))
             {
                 case DelegateCacheContainerKind.ModuleScopedConcrete:
-                    return _factory.ModuleBuilderOpt.DelegateCacheManager.ObtainContainer(delegateType);
+                    return _factory.ModuleBuilderOpt.DelegateCacheManager.GetOrAddContainer(delegateType);
                 case DelegateCacheContainerKind.TypeScopedConcrete:
                     return _factory.CompilationState.TypeScopedDelegateCacheContainer;
                 case DelegateCacheContainerKind.MethodScopedGeneric:
