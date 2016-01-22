@@ -1362,7 +1362,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             // It's not a problem that targetMethod being not visible, but delegateType could. Even it seems to work, it's not worth the risk.
             if (Symbol.IsSymbolAccessible(delegateType, currentMethod.ContainingAssembly))
             {
-                // If the currentMethod and it's containing type and it's ancestors all the way up are concrete,
+                // If the currentMethod and it's containing type and it's ancestors all the way up are not generic types,
                 // then the delegate type and target method should be fully concrete.
                 if (currentMethod.Arity == 0 && !currentMethod.ContainingType.IsGenericType)
                 {
@@ -1393,7 +1393,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             {
                 // If so, we have to "mock" the type parameters of the currentMethod as type parameters of the cache container.
                 // So we can later use them to define the delegate type of the fields of the cache container.
-                // That being said, we need a generic container here.
+                // In conclusion, we need a generic container here.
                 return DelegateCacheContainerKind.MethodScopedGeneric;
             }
 

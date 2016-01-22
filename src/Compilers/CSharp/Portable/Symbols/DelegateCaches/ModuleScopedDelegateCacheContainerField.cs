@@ -17,12 +17,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
     internal class ModuleScopedDelegateCacheContainerField : SynthesizedFieldSymbol
     {
         /// Why the _name is not readonly? Why the _sortKey?
-        /// See comments above <see cref="ModuleScopedDelegateCacheContainer._name"/>
+        /// See the comments above <see cref="ModuleScopedDelegateCacheContainer._name"/>
         private string _name;
 
         private Location _sortKey;
 
-        // Not readonly because container have no idea if this symbol was simply returned or added prior calling AddLocation.
+        /// Not readonly because container have no idea if this symbol was simply returned or added prior calling <see cref="AddLocation(Location)"/>.
         private Location _firstFoundLocation;
 
         private ConcurrentBag<Location> _lazyOtherLocations;

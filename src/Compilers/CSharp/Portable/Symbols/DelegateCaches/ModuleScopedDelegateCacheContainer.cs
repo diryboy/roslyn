@@ -22,7 +22,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         // Why the _name is not readonly? Why the _sortKey?
         // The container is a top level type, and the compilation can be parallel.
         // To ensure simple & deterministic output, we need a unique and deterministic sort key.
-        // When all methods are compiled thus all containers are created, and when things are happening serially before emit, 
+        // When all methods are compiled thus all module scoped containers and fields are created, and when things are happening serially before emitting IL, 
         // we sort the symbols using the smallest location of the conversion that caused them to be created, then use the indices to name them.
         private string _name;
 
