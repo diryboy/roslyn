@@ -16,7 +16,12 @@ namespace Microsoft.CodeAnalysis.CSharp.Completion.Providers
     internal class KeywordCompletionProvider : AbstractKeywordCompletionProvider<CSharpSyntaxContext>
     {
         public KeywordCompletionProvider()
-            : base(GetKeywordRecommenders())
+            : this(GetKeywordRecommenders())
+        {
+        }
+
+        protected KeywordCompletionProvider(ImmutableArray<IKeywordRecommender<CSharpSyntaxContext>> keywordRecommenders)
+            : base(keywordRecommenders)
         {
         }
 
