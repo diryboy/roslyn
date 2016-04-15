@@ -105,7 +105,7 @@
     <Compile Include="CodeRefactorings\MoveDeclarationNearReference\MoveDeclarationNearReferenceCodeRefactoringProvider.State.cs" />
     <Compile Include="CodeStyle\CSharpCodeStyleOptions.cs" />
     <Compile Include="CodeStyle\CSharpCodeStyleOptionsProvider.cs" />
-    <Compile Include="Completion\CompletionProviders\AttributeLocationSpecifierCompletionProvider.cs" />
+    <Compile Include="Completion\CompletionProviders\AttributeTargetKeywordCompletionProvider.cs" />
     <Compile Include="Completion\CompletionProviders\AttributeNameCompletionProvider.cs" />
     <Compile Include="Completion\CompletionProviders\AttributeNamedParameterCompletionProvider.ItemRules.cs" />
     <Compile Include="Completion\CompletionProviders\AttributeNamedParameterCompletionProvider.cs" />

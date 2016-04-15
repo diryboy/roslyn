@@ -11,9 +11,9 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace Microsoft.CodeAnalysis.CSharp.Completion.Providers
 {
-    internal class AttributeLocationSpecifierCompletionProvider : KeywordCompletionProvider
+    internal class AttributeTargetKeywordCompletionProvider : KeywordCompletionProvider
     {
-        public AttributeLocationSpecifierCompletionProvider()
+        public AttributeTargetKeywordCompletionProvider()
             : base(KeywordRecommenders)
         {
         }

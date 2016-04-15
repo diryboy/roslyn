@@ -17,6 +17,6 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.UnitTests.Completion.CompletionPr
         {
         }
 
-        internal override CompletionListProvider CreateCompletionProvider() => new AttributeLocationSpecifierCompletionProvider();
+        internal override CompletionListProvider CreateCompletionProvider() => new AttributeTargetKeywordCompletionProvider();
     }
 }

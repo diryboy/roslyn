@@ -1,10 +1,10 @@
 // Copyright (c) Microsoft.  All Rights Reserved.  Licensed under the Apache License, Version 2.0.  See License.txt in the project root for license information.
-
 using System.Threading;
 using Microsoft.CodeAnalysis.CSharp.Extensions;
 using Microsoft.CodeAnalysis.CSharp.Extensions.ContextQuery;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Shared.Extensions;
+using System;
 
 namespace Microsoft.CodeAnalysis.CSharp.Completion.KeywordRecommenders
 {
@@ -23,7 +23,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Completion.KeywordRecommenders
                 token.Parent.IsKind(SyntaxKind.AttributeList))
             {
                 if (token.GetAncestor<PropertyDeclarationSyntax>() != null ||
-                    token.GetAncestor<EventDeclarationSyntax>() != null)
+                    token.GetAncestor<EventDeclarationSyntax>() != null ||
+                    token.GetAncestor<ParameterSyntax>() != null)
                 {
                     return true;
                 }
