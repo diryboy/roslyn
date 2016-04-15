@@ -24,14 +24,17 @@ namespace Microsoft.CodeAnalysis.CSharp.Completion.Providers
                 new AssemblyKeywordRecommender(),
                 new ModuleKeywordRecommender(),
                 new TypeKeywordRecommender(),
+                new TypeVarKeywordRecommender(),
                 new FieldKeywordRecommender(),
                 new PropertyKeywordRecommender(),
                 new EventKeywordRecommender(),
                 new MethodKeywordRecommender(),
+                new ParamKeywordRecommender(),
                 new ReturnKeywordRecommender(),
             }
             .ToImmutableArray();
 
-        public override bool IsTriggerCharacter(SourceText text, int characterPosition, OptionSet options) => text[characterPosition] == '[';
+        public override bool IsTriggerCharacter(SourceText text, int characterPosition, OptionSet options)
+            => text[characterPosition] == '[' || CompletionUtilities.IsTriggerAfterSpaceOrStartOfWordCharacter(text, characterPosition, options);
     }
 }

@@ -26,7 +26,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Completion
                 new KeywordCompletionProvider(),
                 new AttributeLocationSpecifierCompletionProvider(),
                 new SymbolCompletionProvider(),
-                new AttributeCompletionProvider(),
+                new AttributeNameCompletionProvider(),
                 new ExplicitInterfaceCompletionProvider(),
                 new ObjectCreationCompletionProvider(),
                 new ObjectInitializerCompletionProvider(),

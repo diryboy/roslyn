@@ -18,10 +18,9 @@ using Roslyn.Utilities;
 
 namespace Microsoft.CodeAnalysis.CSharp.Completion.Providers
 {
-    internal class AttributeCompletionProvider : SymbolCompletionProvider
+    internal class AttributeNameCompletionProvider : SymbolCompletionProvider
     {
-        public override bool IsTriggerCharacter(SourceText text, int characterPosition, OptionSet options)
-            => CompletionUtilities.IsTriggerAfterSpaceOrStartOfWordCharacter(text, characterPosition, options);
+        public override bool IsTriggerCharacter(SourceText text, int characterPosition, OptionSet options) => text[characterPosition] == '[';
 
         protected override Task<IEnumerable<ISymbol>> GetSymbolsWorker(AbstractSyntaxContext context, int position, OptionSet options, CancellationToken cancellationToken)
         {
