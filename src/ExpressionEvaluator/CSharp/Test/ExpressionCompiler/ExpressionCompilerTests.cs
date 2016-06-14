@@ -4114,7 +4114,7 @@ class C
 @"{
   // Code size       33 (0x21)
   .maxstack  2
-  IL_0000:  ldsfld     ""D<V> <>x.<<>m0>v<V>.<Target>w""
+  IL_0000:  ldsfld     ""D<V> <>x.<<>m0>x<V>.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -4122,7 +4122,7 @@ class C
   IL_000a:  ldftn      ""void C.Target()""
   IL_0010:  newobj     ""D<V>..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""D<V> <>x.<<>m0>v<V>.<Target>w""
+  IL_0016:  stsfld     ""D<V> <>x.<<>m0>x<V>.<Target>w""
   IL_001b:  call       ""void C.Invoke<V>(D<V>)""
   IL_0020:  ret
 }");
