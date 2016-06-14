@@ -42,10 +42,10 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.Venus
         private const string ReturnReplacementString = @"{|r|}";
         private const string NewLineReplacementString = @"{|n|}";
 
-        private const string HTML = "HTML";
-        private const string HTMLX = "HTMLX";
-        private const string Razor = "Razor";
-        private const string XOML = "XOML";
+        private const string HTML = nameof(HTML);
+        private const string HTMLX = nameof(HTMLX);
+        private const string Razor = nameof(Razor);
+        private const string XOML = nameof(XOML);
 
         private const char RazorExplicit = '@';
 
@@ -66,7 +66,6 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.Venus
         private readonly IComponentModel _componentModel;
         private readonly Workspace _workspace;
         private readonly ITextDifferencingSelectorService _differenceSelectorService;
-        private readonly IOptionService _optionService;
         private readonly HostType _hostType;
         private readonly ReiteratedVersionSnapshotTracker _snapshotTracker;
         private readonly IFormattingRule _vbHelperFormattingRule;
@@ -95,7 +94,6 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.Venus
             _sourceCodeKind = sourceCodeKind;
             _componentModel = componentModel;
             _workspace = workspace;
-            _optionService = _workspace.Services.GetService<IOptionService>();
             _hostType = GetHostType();
 
             string filePath;
@@ -1008,7 +1006,7 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.Venus
         {
             if (_hostType == HostType.HTML)
             {
-                return _optionService.GetOption(FormattingOptions.IndentationSize, this.Project.Language);
+                return _workspace.Options.GetOption(FormattingOptions.IndentationSize, this.Project.Language);
             }
 
             if (_hostType == HostType.Razor)
@@ -1066,7 +1064,7 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.Venus
                         }
                     }
 
-                    return _optionService.GetOption(FormattingOptions.IndentationSize, this.Project.Language);
+                    return _workspace.Options.GetOption(FormattingOptions.IndentationSize, this.Project.Language);
                 }
             }
 

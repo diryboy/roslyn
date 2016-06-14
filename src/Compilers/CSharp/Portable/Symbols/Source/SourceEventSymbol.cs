@@ -31,6 +31,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         private OverriddenOrHiddenMembersResult _lazyOverriddenOrHiddenMembers;
         private ThreeState _lazyIsWindowsRuntimeEvent = ThreeState.Unknown;
 
+        private SourceEventSymbol _replacedBy;
+        private SourceEventSymbol _replaced;
+
         // TODO: CLSCompliantAttribute
 
         internal SourceEventSymbol(
@@ -287,6 +290,17 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             }
         }
 
+        internal override void AddSynthesizedAttributes(ModuleCompilationState compilationState, ref ArrayBuilder<SynthesizedAttributeData> attributes)
+        {
+            base.AddSynthesizedAttributes(compilationState, ref attributes);
+
+            if (this.Type.ContainsDynamic())
+            {
+                var compilation = this.DeclaringCompilation;
+                AddSynthesizedAttribute(ref attributes, compilation.SynthesizeDynamicAttribute(this.Type, customModifiersCount: 0));
+            }
+        }
+
         internal sealed override bool HasSpecialName
         {
             get
@@ -324,6 +338,31 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
         public sealed override bool IsVirtual
         {
             get { return (_modifiers & DeclarationModifiers.Virtual) != 0; }
+        }
+
+        internal sealed override bool IsReplace
+        {
+            get { return (_modifiers & DeclarationModifiers.Replace) != 0; }
+        }
+
+        internal sealed override Symbol Replaced
+        {
+            get { return _replaced; }
+        }
+
+        internal sealed override Symbol ReplacedBy
+        {
+            get { return _replacedBy; }
+        }
+
+        internal sealed override void SetReplaced(Symbol replaced)
+        {
+            this._replaced = (SourceEventSymbol)replaced;
+        }
+
+        internal sealed override void SetReplacedBy(Symbol replacedBy)
+        {
+            this._replacedBy = (SourceEventSymbol)replacedBy;
         }
 
         public sealed override Accessibility DeclaredAccessibility
@@ -395,7 +434,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
             if (!isInterface)
             {
-                allowedModifiers |= DeclarationModifiers.Extern;
+                allowedModifiers |= DeclarationModifiers.Extern |
+                    DeclarationModifiers.Replace;
             }
 
             var mods = ModifierUtils.MakeAndCheckNontypeMemberModifiers(modifiers, defaultAccess, allowedModifiers, location, diagnostics, out modifierErrors);
@@ -501,7 +541,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             return SourceDocumentationCommentUtils.GetAndCacheDocumentationComment(this, expandIncludes, ref _lazyDocComment);
         }
 
-        protected static void CopyEventCustomModifiers(EventSymbol eventWithCustomModifiers, ref TypeSymbol type)
+        protected static void CopyEventCustomModifiers(EventSymbol eventWithCustomModifiers, ref TypeSymbol type, AssemblySymbol containingAssembly)
         {
             Debug.Assert((object)eventWithCustomModifiers != null);
 
@@ -510,9 +550,9 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
             // We do an extra check before copying the type to handle the case where the overriding
             // event (incorrectly) has a different type than the overridden event.  In such cases,
             // we want to retain the original (incorrect) type to avoid hiding the type given in source.
-            if (type.Equals(overriddenEventType, ignoreCustomModifiersAndArraySizesAndLowerBounds: true, ignoreDynamic: false))
+            if (type.Equals(overriddenEventType, ignoreCustomModifiersAndArraySizesAndLowerBounds: true, ignoreDynamic: true))
             {
-                type = overriddenEventType;
+                type = CustomModifierUtils.CopyTypeCustomModifiers(overriddenEventType, type, RefKind.None, containingAssembly);
             }
         }
 

@@ -13,7 +13,7 @@ Namespace Microsoft.CodeAnalysis.Editor.VisualBasic.UnitTests.Completion.Complet
             MyBase.New(workspaceFixture)
         End Sub
 
-        Friend Overrides Function CreateCompletionProvider() As CompletionListProvider
+        Friend Overrides Function CreateCompletionProvider() As CompletionProvider
             Return New HandlesClauseCompletionProvider()
         End Function
 
@@ -225,6 +225,27 @@ Public Class Handler
 
     Public Sub foo Handles '$$
 End Class</text>.Value
+
+            Await VerifyNoItemsExistAsync(text)
+        End Function
+
+        <WorkItem(8307, "https://github.com/dotnet/roslyn/issues/8307")>
+        <Fact, Trait(Traits.Feature, Traits.Features.Completion)>
+        Public Async Function DontCrashOnDotAfterCompleteHandlesClause() As Task
+            Dim text = "
+Imports System
+
+Class C
+    Public Event E As EventHandler
+End Class
+
+Class D
+    WithEvents c As New C
+
+    Sub OnE(sender As Object, e As EventArgs) Handles c.E.$$
+
+    End Sub
+End Class"
 
             Await VerifyNoItemsExistAsync(text)
         End Function

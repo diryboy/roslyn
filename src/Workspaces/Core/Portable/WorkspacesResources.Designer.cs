@@ -71,6 +71,15 @@ namespace Microsoft.CodeAnalysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Add braces to &apos;{0}&apos; statement..
+        /// </summary>
+        internal static string AddBraces {
+            get {
+                return ResourceManager.GetString("AddBraces", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Added:.
         /// </summary>
         internal static string AddedHeader {
@@ -431,6 +440,15 @@ namespace Microsoft.CodeAnalysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Failure.
+        /// </summary>
+        internal static string Failure {
+            get {
+                return ResourceManager.GetString("Failure", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to File was externally modified: {0}..
         /// </summary>
         internal static string FileWasExternallyModified {
@@ -665,6 +683,15 @@ namespace Microsoft.CodeAnalysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Member access should be qualified..
+        /// </summary>
+        internal static string MemberAccessShouldBeQualified {
+            get {
+                return ResourceManager.GetString("MemberAccessShouldBeQualified", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Metadata is already referenced..
         /// </summary>
         internal static string MetadataIsAlreadyReferenced {
@@ -782,11 +809,29 @@ namespace Microsoft.CodeAnalysis {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to The options being set didn&apos;t originate from a workspace..
+        /// </summary>
+        internal static string OptionsDidNotComeFromWorkspace {
+            get {
+                return ResourceManager.GetString("OptionsDidNotComeFromWorkspace", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Specified path must be absolute..
         /// </summary>
         internal static string PathMustBeAbsolute {
             get {
                 return ResourceManager.GetString("PathMustBeAbsolute", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Populate switch.
+        /// </summary>
+        internal static string PopulateSwitch {
+            get {
+                return ResourceManager.GetString("PopulateSwitch", resourceCulture);
             }
         }
         
@@ -1066,6 +1111,15 @@ namespace Microsoft.CodeAnalysis {
         internal static string ValueTooLargeToBeRepresented {
             get {
                 return ResourceManager.GetString("ValueTooLargeToBeRepresented", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Warning.
+        /// </summary>
+        internal static string Warning {
+            get {
+                return ResourceManager.GetString("Warning", resourceCulture);
             }
         }
         

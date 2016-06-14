@@ -29,7 +29,7 @@ namespace Microsoft.Cci
         /// A set of bits and bit ranges representing properties of the assembly. The value of <see cref="Flags"/> can be set
         /// from source code via the AssemblyFlags assembly custom attribute. The interpretation of the property depends on the target platform.
         /// </summary>
-        uint Flags { get; }
+        AssemblyFlags Flags { get; }
 
         /// <summary>
         /// The public part of the key used to encrypt the SHA1 hash over the persisted form of this assembly. Empty or null if not specified.
@@ -51,34 +51,8 @@ namespace Microsoft.Cci
     /// </summary>
     internal interface IAssemblyReference : IModuleReference
     {
-        /// <summary>
-        /// Identifies the culture associated with the assembly reference. Typically specified for satellite assemblies with localized resources.
-        /// Empty if not specified.
-        /// </summary>
-        string Culture { get; }
-
-        /// <summary>
-        /// True if the implementation of the referenced assembly used at runtime is not expected to match the version seen at compile time.
-        /// </summary>
-        bool IsRetargetable { get; }
-
-        /// <summary>
-        /// Type of code contained in an assembly. Determines assembly binding model.
-        /// </summary>
-        AssemblyContentType ContentType { get; }
-
-        /// <summary>
-        /// The hashed 8 bytes of the public key of the referenced assembly. 
-        /// Empty if the referenced assembly does not have a public key.
-        /// </summary>
-        ImmutableArray<byte> PublicKeyToken { get; }
-
-        /// <summary>
-        /// The version of the assembly reference.
-        /// </summary>
-        Version Version { get; }
-
-        string GetDisplayName();
+        AssemblyIdentity Identity { get; }
+        Version AssemblyVersionPattern { get; }
     }
 
     /// <summary>
@@ -127,7 +101,7 @@ namespace Microsoft.Cci
         /// <summary>
         /// A list of named byte sequences persisted with the assembly and used during execution, typically via .NET Framework helper classes.
         /// </summary>
-        IEnumerable<ManagedResource> GetResources(EmitContext context);
+        ImmutableArray<ManagedResource> GetResources(EmitContext context);
 
         /// <summary>
         /// CorLibrary assembly referenced by this module.

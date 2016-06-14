@@ -1416,7 +1416,7 @@ namespace ConsoleApplication3
         [Fact]
         public void CS0029ERR_NoImplicitConv03()
         {
-            var source = 
+            var source =
 @"class C
 {
     static void M()
@@ -3314,7 +3314,7 @@ class Test
         [Fact]
         public void CS0126ERR_RetObjectRequired()
         {
-            var source = 
+            var source =
 @"namespace N
 {
     class C
@@ -3351,7 +3351,7 @@ class Test
         [Fact]
         public void CS0126ERR_RetObjectRequired_02()
         {
-            var source = 
+            var source =
 @"namespace Test
 {
     public delegate object D();
@@ -3406,7 +3406,7 @@ class Test
         [Fact]
         public void CS0127ERR_RetNoObjectRequired()
         {
-            var source = 
+            var source =
 @"namespace MyNamespace
 {
     public class MyClass
@@ -3503,7 +3503,7 @@ namespace MyNamespace
         [Fact]
         public void CS0131ERR_AssgLvalueExpected02()
         {
-            var source = 
+            var source =
 @"class C
 {
     const object NoObject = null;
@@ -3601,7 +3601,7 @@ class A
         [Fact]
         public void CS0133ERR_NotConstantExpression01()
         {
-            var source = 
+            var source =
 @"class MyClass
 {
    public const int a = b; //no error since b is declared const
@@ -3618,7 +3618,7 @@ class A
         [Fact]
         public void CS0133ERR_NotConstantExpression02()
         {
-            var source = 
+            var source =
 @"enum E
 {
     X,
@@ -3649,7 +3649,7 @@ class C
         [Fact]
         public void CS0133ERR_NotConstantExpression03()
         {
-            var source = 
+            var source =
 @"class C
 {
     static void M()
@@ -4148,7 +4148,7 @@ class Program
         [Fact]
         public void CS0154ERR_PropertyLacksGet02()
         {
-            var source = 
+            var source =
 @"class A
 {
     public virtual A P { get; set; }
@@ -4186,7 +4186,7 @@ class B : A
         [Fact]
         public void CS0154ERR_PropertyLacksGet03()
         {
-            var source = 
+            var source =
 @"class C
 {
     int P { set { } }
@@ -4205,7 +4205,7 @@ class B : A
         [Fact]
         public void CS0154ERR_PropertyLacksGet04()
         {
-            var source = 
+            var source =
 @"class C
 {
     object p;
@@ -6704,7 +6704,7 @@ public class C
         [Fact, WorkItem(538008, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/538008")]
         public void CS0191ERR_AssgReadonly()
         {
-            var source = 
+            var source =
 @"class MyClass
 {
     public readonly int TestInt = 6;  // OK to assign to readonly field in declaration
@@ -7160,6 +7160,56 @@ public class MyList<T>
         [Fact, WorkItem(536863, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/536863")]
         public void CS0201ERR_IllegalStatement2()
         {
+            var text = @"
+class A
+{
+    public static int Main()
+    {
+        (a) => a;
+        (a, b) =>
+        {
+        };
+        int x = 0; int y = 0;
+        x + y; x == 1;
+    }
+}";
+            CreateCompilationWithMscorlib(text, parseOptions: TestOptions.Regular.WithTuplesFeature()).VerifyDiagnostics(
+    // (7,16): error CS1001: Identifier expected
+    //         (a, b) =>
+    Diagnostic(ErrorCode.ERR_IdentifierExpected, "=>").WithLocation(7, 16),
+    // (7,16): error CS1003: Syntax error, ',' expected
+    //         (a, b) =>
+    Diagnostic(ErrorCode.ERR_SyntaxError, "=>").WithArguments(",", "=>").WithLocation(7, 16),
+    // (7,18): error CS1002: ; expected
+    //         (a, b) =>
+    Diagnostic(ErrorCode.ERR_SemicolonExpected, "").WithLocation(7, 18),
+    // (6,9): error CS0201: Only assignment, call, increment, decrement, and new object expressions can be used as a statement
+    //         (a) => a;
+    Diagnostic(ErrorCode.ERR_IllegalStatement, "(a) => a").WithLocation(6, 9),
+    // (7,10): error CS0246: The type or namespace name 'a' could not be found (are you missing a using directive or an assembly reference?)
+    //         (a, b) =>
+    Diagnostic(ErrorCode.ERR_SingleTypeNameNotFound, "a").WithArguments("a").WithLocation(7, 10),
+    // (7,13): error CS0246: The type or namespace name 'b' could not be found (are you missing a using directive or an assembly reference?)
+    //         (a, b) =>
+    Diagnostic(ErrorCode.ERR_SingleTypeNameNotFound, "b").WithArguments("b").WithLocation(7, 13),
+    // (7,9): error CS0518: Predefined type 'System.ValueTuple`2' is not defined or imported
+    //         (a, b) =>
+    Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "(a, b)").WithArguments("System.ValueTuple`2").WithLocation(7, 9),
+    // (11,9): error CS0201: Only assignment, call, increment, decrement, and new object expressions can be used as a statement
+    //         x + y; x == 1;
+    Diagnostic(ErrorCode.ERR_IllegalStatement, "x + y").WithLocation(11, 9),
+    // (11,16): error CS0201: Only assignment, call, increment, decrement, and new object expressions can be used as a statement
+    //         x + y; x == 1;
+    Diagnostic(ErrorCode.ERR_IllegalStatement, "x == 1").WithLocation(11, 16),
+    // (4,23): error CS0161: 'A.Main()': not all code paths return a value
+    //     public static int Main()
+    Diagnostic(ErrorCode.ERR_ReturnExpected, "Main").WithArguments("A.Main()").WithLocation(4, 23)
+    );
+        }
+
+        [Fact, WorkItem(536863, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/536863")]
+        public void CS0201ERR_IllegalStatement2WithCSharp6()
+        {
             var test = @"
 class A
 {
@@ -7173,17 +7223,45 @@ class A
         x + y; x == 1;
     }
 }";
-            DiagnosticsUtils.VerifyErrorsAndGetCompilationWithMscorlib(test,
-                new ErrorDescription[] {
-                    new ErrorDescription { Code = (int)ErrorCode.ERR_IllegalStatement, Line = 6, Column = 9 },
-                    new ErrorDescription { Code = (int)ErrorCode.ERR_IllegalStatement, Line = 7, Column = 9 },
-                    new ErrorDescription { Code = (int)ErrorCode.ERR_IllegalStatement, Line = 11, Column = 9 },
-                    new ErrorDescription { Code = (int)ErrorCode.ERR_IllegalStatement, Line = 11, Column = 16 },
-                    new ErrorDescription { Code = (int)ErrorCode.ERR_ReturnExpected, Line = 4, Column = 23 }
-                });
+            var comp = CreateCompilationWithMscorlib(new[] { Parse(test, options: TestOptions.Regular.WithLanguageVersion(LanguageVersion.CSharp6)) }, new MetadataReference[] { });
+            comp.VerifyDiagnostics(
+                // (7,9): error CS8058: Feature 'tuples' is experimental and unsupported; use '/features:tuples' to enable.
+                //         (a, b) =>
+                Diagnostic(ErrorCode.ERR_FeatureIsExperimental, "(a, b)").WithArguments("tuples", "tuples").WithLocation(7, 9),
+                // (7,16): error CS1001: Identifier expected
+                //         (a, b) =>
+                Diagnostic(ErrorCode.ERR_IdentifierExpected, "=>").WithLocation(7, 16),
+                // (7,16): error CS1003: Syntax error, ',' expected
+                //         (a, b) =>
+                Diagnostic(ErrorCode.ERR_SyntaxError, "=>").WithArguments(",", "=>").WithLocation(7, 16),
+                // (7,18): error CS1002: ; expected
+                //         (a, b) =>
+                Diagnostic(ErrorCode.ERR_SemicolonExpected, "").WithLocation(7, 18),
+                // (6,9): error CS0201: Only assignment, call, increment, decrement, and new object expressions can be used as a statement
+                //         (a) => a;
+                Diagnostic(ErrorCode.ERR_IllegalStatement, "(a) => a").WithLocation(6, 9),
+                // (7,10): error CS0246: The type or namespace name 'a' could not be found (are you missing a using directive or an assembly reference?)
+                //         (a, b) =>
+                Diagnostic(ErrorCode.ERR_SingleTypeNameNotFound, "a").WithArguments("a").WithLocation(7, 10),
+                // (7,13): error CS0246: The type or namespace name 'b' could not be found (are you missing a using directive or an assembly reference?)
+                //         (a, b) =>
+                Diagnostic(ErrorCode.ERR_SingleTypeNameNotFound, "b").WithArguments("b").WithLocation(7, 13),
+                // (7,9): error CS0518: Predefined type 'System.ValueTuple`2' is not defined or imported
+                //         (a, b) =>
+                Diagnostic(ErrorCode.ERR_PredefinedTypeNotFound, "(a, b)").WithArguments("System.ValueTuple`2").WithLocation(7, 9),
+                // (11,9): error CS0201: Only assignment, call, increment, decrement, and new object expressions can be used as a statement
+                //         x + y; x == 1;
+                Diagnostic(ErrorCode.ERR_IllegalStatement, "x + y").WithLocation(11, 9),
+                // (11,16): error CS0201: Only assignment, call, increment, decrement, and new object expressions can be used as a statement
+                //         x + y; x == 1;
+                Diagnostic(ErrorCode.ERR_IllegalStatement, "x == 1").WithLocation(11, 16),
+                // (4,23): error CS0161: 'A.Main()': not all code paths return a value
+                //     public static int Main()
+                Diagnostic(ErrorCode.ERR_ReturnExpected, "Main").WithArguments("A.Main()").WithLocation(4, 23)
+                );
         }
 
-        [Fact()]
+        [Fact]
         public void CS0202ERR_BadGetEnumerator()
         {
             var text = @"
@@ -8497,7 +8575,7 @@ class MyClass
         [Fact]
         public void CS0266ERR_NoImplicitConvCast02()
         {
-            var source = 
+            var source =
 @"class C
 {
     const int f = 0L;
@@ -8512,7 +8590,7 @@ class MyClass
         [Fact]
         public void CS0266ERR_NoImplicitConvCast03()
         {
-            var source = 
+            var source =
 @"class C
 {
     static void M()
@@ -8530,7 +8608,7 @@ class MyClass
         [Fact]
         public void CS0266ERR_NoImplicitConvCast04()
         {
-            var source = 
+            var source =
 @"enum E { A = 1 }
 class C
 {
@@ -8555,7 +8633,7 @@ class C
         [Fact]
         public void CS0266ERR_NoImplicitConvCast05()
         {
-            var source = 
+            var source =
 @"enum E : byte
 {
     A = 'a', // CS0266
@@ -8571,7 +8649,7 @@ class C
         [Fact]
         public void CS0266ERR_NoImplicitConvCast06()
         {
-            var source = 
+            var source =
 @"enum E
 {
     A = 1,
@@ -8596,7 +8674,7 @@ class C
         public void CS0266ERR_NoImplicitConvCast08()
         {
             // No errors
-            var source = 
+            var source =
 @"enum E { A = 1, B }
 enum F { X = E.A + 1, Y }
 ";
@@ -8606,7 +8684,7 @@ enum F { X = E.A + 1, Y }
         [Fact]
         public void CS0266ERR_NoImplicitConvCast09()
         {
-            var source = 
+            var source =
 @"enum E
 {
     A = F.A,
@@ -8629,7 +8707,7 @@ enum G : long { A = 1, B }
         [Fact]
         public void CS0266ERR_NoImplicitConvCast10()
         {
-            var source = 
+            var source =
 @"class C
 {
     public const int F = D.G + 1;
@@ -9006,7 +9084,7 @@ class C
             // Test for both ERR_BadConstType and an error for RHS to ensure
             // the RHS is not reported multiple times (when calculating the
             // constant value for the symbol and also when binding).
-            var source = 
+            var source =
 @"struct S
 {
     static void M(object o)
@@ -10389,7 +10467,7 @@ public struct cly
         [Fact]
         public void CS0543ERR_EnumeratorOverflow01()
         {
-            var source = 
+            var source =
 @"enum E
 {
     A = int.MaxValue - 1,
@@ -10415,7 +10493,7 @@ public struct cly
         [Fact]
         public void CS0543ERR_EnumeratorOverflow02()
         {
-            var source = 
+            var source =
 @"namespace N
 {
     enum E : byte { A = 255, B, C }
@@ -10438,7 +10516,7 @@ public struct cly
         [Fact]
         public void CS0543ERR_EnumeratorOverflow03()
         {
-            var source = 
+            var source =
 @"enum S8 : sbyte { A = sbyte.MinValue, B, C, D = -1, E, F, G = sbyte.MaxValue - 2, H, I, J, K }
 enum S16 : short { A = short.MinValue, B, C, D = -1, E, F, G = short.MaxValue - 2, H, I, J, K }
 enum S32 : int { A = int.MinValue, B, C, D = -1, E, F, G = int.MaxValue - 2, H, I, J, K }
@@ -10520,7 +10598,7 @@ enum D : sbyte {3}",
         [Fact]
         public void CS0571ERR_CantCallSpecialMethod01()
         {
-            var source = 
+            var source =
 @"class C
 {
     protected virtual object P { get; set; }
@@ -10563,7 +10641,7 @@ class D : C
         [Fact]
         public void CS0571ERR_CantCallSpecialMethod02()
         {
-            var source = 
+            var source =
 @"using System;
 namespace A.B
 {
@@ -10603,7 +10681,7 @@ namespace A.B
         [Fact]
         public void CS0571ERR_CantCallSpecialMethod03()
         {
-            var source = 
+            var source =
 @"class A
 {
     public object get_P() { return null; }
@@ -10653,7 +10731,7 @@ class C
         [Fact]
         public void CS0571ERR_CantCallSpecialMethod05()
         {
-            var source = 
+            var source =
 @"
 using System;
 public class C
@@ -12622,7 +12700,7 @@ public class TestTheClasses
         [Fact]
         public void CS1061ERR_NoSuchMemberOrExtension02()
         {
-            var source = 
+            var source =
 @"enum E { }
 class C
 {
@@ -12978,7 +13056,7 @@ namespace x
         [Fact]
         public void CS1503ERR_BadArgType01()
         {
-            var source = 
+            var source =
 @"namespace X
 {
     public class C
@@ -13002,7 +13080,7 @@ namespace x
         [Fact]
         public void CS1503ERR_BadArgType02()
         {
-            var source = 
+            var source =
 @"enum E1 { A, B, C }
 enum E2 { X, Y, Z }
 class C
@@ -13039,7 +13117,7 @@ class C
         [Fact]
         public void CS1503ERR_BadArgType03()
         {
-            var source = 
+            var source =
 @"class C
 {
     static void F(out int i)
@@ -14637,8 +14715,10 @@ class D
 }
 ";
             CreateCompilationWithMscorlib(text).VerifyDiagnostics(
-                // (21,15): error CS1649: Members of readonly field 'Outer.inner' cannot be passed ref or out (except in a constructor)
-                Diagnostic(ErrorCode.ERR_RefReadonly2, "outer.inner.i").WithArguments("Outer.inner"));
+    // (21,15): error CS1649: Members of readonly field 'Outer.inner' cannot be used as a ref or out value (except in a constructor)
+    //         f(ref outer.inner.i);  // CS1649
+    Diagnostic(ErrorCode.ERR_RefReadonly2, "outer.inner.i").WithArguments("Outer.inner").WithLocation(21, 15)
+);
         }
 
         [Fact]
@@ -14867,8 +14947,10 @@ class C
 }
 ";
             CreateCompilationWithMscorlib(text).VerifyDiagnostics(
-                // (12,19): error CS1657: Cannot pass 'a' as a ref or out argument because it is a 'foreach iteration variable'
-                Diagnostic(ErrorCode.ERR_RefReadonlyLocalCause, "a").WithArguments("a", "foreach iteration variable"));
+    // (12,19): error CS1657: Cannot use 'a' as a ref or out value because it is a 'foreach iteration variable'
+    //             F(ref a); //CS1657
+    Diagnostic(ErrorCode.ERR_RefReadonlyLocalCause, "a").WithArguments("a", "foreach iteration variable").WithLocation(12, 19)
+                );
         }
 
         [Fact]
@@ -22419,9 +22501,10 @@ class Program
 ";
 
             CreateCompilationWithMscorlib(source).VerifyDiagnostics(
-                // (11,58): error CS0199: A static readonly field cannot be passed ref or out (except in a static constructor)
-                //         static readonly Program Field3 = new Program(ref Program.Field2);
-                Diagnostic(ErrorCode.ERR_RefReadonlyStatic, "Program.Field2"));
+    // (11,58): error CS0199: A static readonly field cannot be used as a ref or out value (except in a static constructor)
+    //         static readonly Program Field3 = new Program(ref Program.Field2);
+    Diagnostic(ErrorCode.ERR_RefReadonlyStatic, "Program.Field2").WithLocation(11, 58)
+);
         }
 
         [Fact]

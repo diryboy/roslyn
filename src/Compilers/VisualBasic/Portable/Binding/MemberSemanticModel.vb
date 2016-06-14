@@ -281,6 +281,8 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
                      SyntaxKind.ExitWhileStatement,
                      SyntaxKind.ExitFunctionStatement,
                      SyntaxKind.ExitSubStatement,
+                     SyntaxKind.ExitOperatorStatement,
+                     SyntaxKind.ExitPropertyStatement,
                      SyntaxKind.ContinueDoStatement,
                      SyntaxKind.ContinueForStatement,
                      SyntaxKind.ContinueWhileStatement,
@@ -291,6 +293,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
                      SyntaxKind.ConstructorBlock,
                      SyntaxKind.GetAccessorBlock,
                      SyntaxKind.SetAccessorBlock,
+                     SyntaxKind.OperatorBlock,
                      SyntaxKind.AddHandlerAccessorBlock, SyntaxKind.RemoveHandlerAccessorBlock, SyntaxKind.RaiseEventAccessorBlock,
                      SyntaxKind.ReDimStatement,
                      SyntaxKind.ReDimPreserveStatement,
@@ -300,6 +303,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
                      SyntaxKind.OnErrorGoToMinusOneStatement,
                      SyntaxKind.OnErrorGoToLabelStatement,
                      SyntaxKind.OnErrorResumeNextStatement,
+                     SyntaxKind.ResumeStatement,
                      SyntaxKind.ResumeLabelStatement,
                      SyntaxKind.ResumeNextStatement,
                      SyntaxKind.EndStatement,
@@ -324,6 +328,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
                      SyntaxKind.EndSelectStatement,
                      SyntaxKind.EndSubStatement,
                      SyntaxKind.EndFunctionStatement,
+                     SyntaxKind.EndOperatorStatement,
                      SyntaxKind.WhileStatement,
                      SyntaxKind.EndWhileStatement,
                      SyntaxKind.TryStatement,
@@ -794,17 +799,6 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
                 Case Else
                     result = summary.LowestBoundNode
             End Select
-
-            ' Screen out bound nodes that aren't appropriate as IOperations.
-            If result IsNot Nothing Then
-                If result.Kind = BoundKind.EqualsValue Then
-                    result = DirectCast(result, BoundEqualsValue).Value
-                End If
-
-                If result.Kind = BoundKind.FieldOrPropertyInitializer Then
-                    result = DirectCast(result, BoundFieldOrPropertyInitializer).InitialValue
-                End If
-            End If
 
             Return TryCast(result, IOperation)
         End Function
@@ -1277,7 +1271,15 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
                     Debug.Assert(current.Parent.Kind = SyntaxKind.WithStatement)
                     Debug.Assert(current.Parent.Parent.Kind = SyntaxKind.WithBlock)
 
-                    current = current.Parent.Parent.Parent
+                    current = current.Parent.Parent
+
+                    ' If we are speculating on the With block, we might have reached our root,
+                    ' return memberBinder in this case.
+                    If current Is binderRoot Then
+                        Return memberBinder
+                    End If
+
+                    current = current.Parent
                     ' Proceed to the end of If statement
 
                 End If
@@ -1684,7 +1686,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
             Return False
         End Function
 
-        Private Function InWithStatementExpressionInterior(node As VisualBasicSyntaxNode) As Boolean
+        Private Shared Function InWithStatementExpressionInterior(node As VisualBasicSyntaxNode) As Boolean
 
             Dim expression = TryCast(node, ExpressionSyntax)
             If expression IsNot Nothing Then
@@ -1844,7 +1846,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
         ''' <param name="syntax">The syntax node to check.</param>
         ''' <returns><c>True</c> if the syntax node represents an expression syntax, but it's not 
         ''' an expression from the VB language point of view; otherwise <c>False</c>.</returns>
-        Private Function IsNonExpressionCollectionInitializer(syntax As VisualBasicSyntaxNode) As Boolean
+        Private Shared Function IsNonExpressionCollectionInitializer(syntax As VisualBasicSyntaxNode) As Boolean
             Dim parent As VisualBasicSyntaxNode = syntax.Parent
             If syntax.Kind = SyntaxKind.CollectionInitializer AndAlso parent IsNot Nothing Then
                 If parent.Kind = SyntaxKind.ObjectCollectionInitializer Then

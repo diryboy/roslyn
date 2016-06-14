@@ -2353,6 +2353,114 @@ class Program
             Assert.Equal(CandidateReason.NotReferencable, symbolInfo.CandidateReason);
         }
 
+        [Fact]
+        public void RefReturningDelegateCreation()
+        {
+            var text = @"
+delegate ref int D();
+
+class C
+{
+    int field = 0;
+
+    ref int M()
+    {
+        return ref field;
+    }
+
+    void Test()
+    {
+        new D(M)();
+    }
+}
+";
+
+            CreateExperimentalCompilationWithMscorlib45(text).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void RefReturningDelegateCreationBad()
+        {
+            var text = @"
+delegate ref int D();
+
+class C
+{
+    int field = 0;
+
+    int M()
+    {
+        return field;
+    }
+
+    void Test()
+    {
+        new D(M)();
+    }
+}
+";
+
+            CreateExperimentalCompilationWithMscorlib45(text).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void RefReturningDelegateArgument()
+        {
+            var text = @"
+delegate ref int D();
+
+class C
+{
+    int field = 0;
+
+    ref int M()
+    {
+        return ref field;
+    }
+
+    void M(D d)
+    {
+    }
+
+    void Test()
+    {
+        M(M);
+    }
+}
+";
+
+            CreateExperimentalCompilationWithMscorlib45(text).VerifyDiagnostics();
+        }
+
+        [Fact]
+        public void RefReturningDelegateArgumentBad()
+        {
+            var text = @"
+delegate ref int D();
+
+class C
+{
+    int field = 0;
+
+    int M()
+    {
+        return field;
+    }
+
+    void M(D d)
+    {
+    }
+
+    void Test()
+    {
+        M(M);
+    }
+}
+";
+
+            CreateExperimentalCompilationWithMscorlib45(text).VerifyDiagnostics();
+        }
+
         [Fact, WorkItem(1078958, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/1078958")]
         public void Bug1078958()
         {
@@ -2694,7 +2802,7 @@ class A
         }
 
         [Fact, WorkItem(5170, "https://github.com/dotnet/roslyn/issues/5170")]
-        public void TypeOfBinderParameter() 
+        public void TypeOfBinderParameter()
         {
             var sourceText = @"
 using System.Linq;
@@ -2710,7 +2818,7 @@ public static class LazyToStringExtension
             .Select(x => x.GetValue(obj))
     }
 }";
-            var compilation = CreateCompilationWithMscorlib(sourceText, new[] { SystemCoreRef },  options: TestOptions.DebugDll);
+            var compilation = CreateCompilationWithMscorlib(sourceText, new[] { SystemCoreRef }, options: TestOptions.DebugDll);
             compilation.VerifyDiagnostics(
                 // (12,42): error CS1002: ; expected
                 //             .Select(x => x.GetValue(obj))
@@ -2726,6 +2834,93 @@ public static class LazyToStringExtension
             var node = tree.GetRoot().DescendantNodes().Where(n => n.IsKind(SyntaxKind.SimpleLambdaExpression)).Single();
             var param = node.ChildNodes().Where(n => n.IsKind(SyntaxKind.Parameter)).Single();
             Assert.Equal("System.Reflection.PropertyInfo x", model.GetDeclaredSymbol(param).ToTestDisplayString());
+        }
+
+        [Fact, WorkItem(7520, "https://github.com/dotnet/roslyn/issues/7520")]
+        public void DelegateCreationWithIncompleteLambda()
+        {
+            var source =
+@"
+using System;
+class C
+{
+    public void F()
+    {
+        var x = new Action<int>(i => i.
+    }
+}
+";
+            var comp = CreateCompilationWithMscorlib(source, new[] { SystemCoreRef });
+            comp.VerifyDiagnostics(
+                // (7,40): error CS1001: Identifier expected
+                //         var x = new Action<int>(i => i.
+                Diagnostic(ErrorCode.ERR_IdentifierExpected, "").WithLocation(7, 40),
+                // (7,40): error CS1026: ) expected
+                //         var x = new Action<int>(i => i.
+                Diagnostic(ErrorCode.ERR_CloseParenExpected, "").WithLocation(7, 40),
+                // (7,40): error CS1002: ; expected
+                //         var x = new Action<int>(i => i.
+                Diagnostic(ErrorCode.ERR_SemicolonExpected, "").WithLocation(7, 40),
+                // (7,38): error CS0201: Only assignment, call, increment, decrement, and new object expressions can be used as a statement
+                //         var x = new Action<int>(i => i.
+                Diagnostic(ErrorCode.ERR_IllegalStatement, @"i.
+").WithLocation(7, 38)
+            );
+            var tree = comp.SyntaxTrees[0];
+            var model = comp.GetSemanticModel(tree);
+            var lambda = tree.GetRoot().DescendantNodes().Where(n => n.IsKind(SyntaxKind.SimpleLambdaExpression)).Single();
+
+            var param = lambda.ChildNodes().Where(n => n.IsKind(SyntaxKind.Parameter)).Single();
+            var symbol1 = model.GetDeclaredSymbol(param);
+            Assert.Equal("System.Int32 i", symbol1.ToTestDisplayString());
+
+            var id = lambda.DescendantNodes().First(n => n.IsKind(SyntaxKind.IdentifierName));
+            var symbol2 = model.GetSymbolInfo(id).Symbol;
+            Assert.Equal("System.Int32 i", symbol2.ToTestDisplayString());
+
+            Assert.Same(symbol1, symbol2);
+        }
+
+        [Fact, WorkItem(7520, "https://github.com/dotnet/roslyn/issues/7520")]
+        public void ImplicitDelegateCreationWithIncompleteLambda()
+        {
+            var source =
+@"
+using System;
+class C
+{
+    public void F()
+    {
+        Action<int> x = i => i.
+    }
+}
+";
+            var comp = CreateCompilationWithMscorlib(source, new[] { SystemCoreRef });
+            comp.VerifyDiagnostics(
+                // (7,32): error CS1001: Identifier expected
+                //         Action<int> x = i => i.
+                Diagnostic(ErrorCode.ERR_IdentifierExpected, "").WithLocation(7, 32),
+                // (7,32): error CS1002: ; expected
+                //         Action<int> x = i => i.
+                Diagnostic(ErrorCode.ERR_SemicolonExpected, "").WithLocation(7, 32),
+                // (7,30): error CS0201: Only assignment, call, increment, decrement, and new object expressions can be used as a statement
+                //         Action<int> x = i => i.
+                Diagnostic(ErrorCode.ERR_IllegalStatement, @"i.
+").WithLocation(7, 30)
+            );
+            var tree = comp.SyntaxTrees[0];
+            var model = comp.GetSemanticModel(tree);
+            var lambda = tree.GetRoot().DescendantNodes().Where(n => n.IsKind(SyntaxKind.SimpleLambdaExpression)).Single();
+
+            var param = lambda.ChildNodes().Where(n => n.IsKind(SyntaxKind.Parameter)).Single();
+            var symbol1 = model.GetDeclaredSymbol(param);
+            Assert.Equal("System.Int32 i", symbol1.ToTestDisplayString());
+
+            var id = lambda.DescendantNodes().First(n => n.IsKind(SyntaxKind.IdentifierName));
+            var symbol2 = model.GetSymbolInfo(id).Symbol;
+            Assert.Equal("System.Int32 i", symbol2.ToTestDisplayString());
+
+            Assert.Same(symbol1, symbol2);
         }
 
         [Fact, WorkItem(5128, "https://github.com/dotnet/roslyn/issues/5128")]
@@ -2790,7 +2985,7 @@ class C
             var group1 = model.GetMemberGroup(node1);
             Assert.Equal(2, group1.Length);
             Assert.Equal("IApplicationBuilder IApplicationBuilder.Use(System.Func<RequestDelegate, RequestDelegate> middleware)", group1[0].ToTestDisplayString());
-            Assert.Equal("IApplicationBuilder IApplicationBuilder.Use(System.Func<HttpContext, System.Func<System.Threading.Tasks.Task>, System.Threading.Tasks.Task> middleware)", 
+            Assert.Equal("IApplicationBuilder IApplicationBuilder.Use(System.Func<HttpContext, System.Func<System.Threading.Tasks.Task>, System.Threading.Tasks.Task> middleware)",
                          group1[1].ToTestDisplayString());
 
             var symbolInfo1 = model.GetSymbolInfo(node1);
@@ -2799,7 +2994,7 @@ class C
             Assert.Equal("IApplicationBuilder IApplicationBuilder.Use(System.Func<RequestDelegate, RequestDelegate> middleware)", symbolInfo1.CandidateSymbols.Single().ToTestDisplayString());
             Assert.Equal(CandidateReason.OverloadResolutionFailure, symbolInfo1.CandidateReason);
 
-            var node = tree.GetRoot().DescendantNodes().Where(n => n.IsKind(SyntaxKind.IdentifierName) && ((IdentifierNameSyntax)n).Identifier.ValueText== "AuthenticateAsync").Single().Parent;
+            var node = tree.GetRoot().DescendantNodes().Where(n => n.IsKind(SyntaxKind.IdentifierName) && ((IdentifierNameSyntax)n).Identifier.ValueText == "AuthenticateAsync").Single().Parent;
 
             Assert.Equal("ctx.Authentication.AuthenticateAsync", node.ToString());
 
@@ -2869,7 +3064,7 @@ class C
             Assert.Equal("app.Use", node1.ToString());
             var group1 = model.GetMemberGroup(node1);
             Assert.Equal(2, group1.Length);
-            Assert.Equal("IApplicationBuilder IApplicationBuilder.Use(System.Func<HttpContext, System.Func<System.Threading.Tasks.Task>, System.Threading.Tasks.Task> middleware)", 
+            Assert.Equal("IApplicationBuilder IApplicationBuilder.Use(System.Func<HttpContext, System.Func<System.Threading.Tasks.Task>, System.Threading.Tasks.Task> middleware)",
                          group1[0].ToTestDisplayString());
             Assert.Equal("IApplicationBuilder IApplicationBuilder.Use(System.Func<RequestDelegate, RequestDelegate> middleware)", group1[1].ToTestDisplayString());
 
@@ -2943,7 +3138,7 @@ class C
             var group1 = model.GetMemberGroup(node1);
             Assert.Equal(2, group1.Length);
             Assert.Equal("IApplicationBuilder IApplicationBuilder.Use(System.Func<RequestDelegate, RequestDelegate> middleware)", group1[0].ToTestDisplayString());
-            Assert.Equal("IApplicationBuilder IApplicationBuilder.Use(System.Func<HttpContext, System.Func<System.Threading.Tasks.Task>, System.Threading.Tasks.Task> middleware)", 
+            Assert.Equal("IApplicationBuilder IApplicationBuilder.Use(System.Func<HttpContext, System.Func<System.Threading.Tasks.Task>, System.Threading.Tasks.Task> middleware)",
                          group1[1].ToTestDisplayString());
 
             var symbolInfo1 = model.GetSymbolInfo(node1);
@@ -3028,7 +3223,7 @@ class C
             var group1 = model.GetMemberGroup(node1);
             Assert.Equal(2, group1.Length);
             Assert.Equal("IApplicationBuilder IApplicationBuilder.Use(System.Func<RequestDelegate, RequestDelegate> middleware)", group1[0].ToTestDisplayString());
-            Assert.Equal("IApplicationBuilder IApplicationBuilder.Use(System.Func<HttpContext, System.Func<System.Threading.Tasks.Task>, System.Threading.Tasks.Task> middleware)", 
+            Assert.Equal("IApplicationBuilder IApplicationBuilder.Use(System.Func<HttpContext, System.Func<System.Threading.Tasks.Task>, System.Threading.Tasks.Task> middleware)",
                          group1[1].ToTestDisplayString());
 
             var symbolInfo1 = model.GetSymbolInfo(node1);
@@ -3153,6 +3348,65 @@ static class Extension2
             Assert.False(symbols.Where(s => s.Name == "F2").Any());
             Assert.False(symbols.Where(s => s.Name == "MathMax2").Any());
             Assert.False(symbols.Where(s => s.Name == "MathMax3").Any());
+        }
+
+        [Fact, WorkItem(8234, "https://github.com/dotnet/roslyn/issues/8234")]
+        public void EventAccessInTypeNameContext()
+        {
+            var source =
+@"
+class Program
+{
+    static void Main() {}
+
+    event System.EventHandler E1;
+
+    void Test(Program x)
+    {
+        System.Console.WriteLine();
+        x.E1.E
+        System.Console.WriteLine();
+    }
+
+    void Dummy()
+    {
+        E1 = null;
+        var x = E1;
+    }
+}
+";
+            var comp = CreateCompilationWithMscorlib(source);
+
+            comp.VerifyDiagnostics(
+    // (11,15): error CS1001: Identifier expected
+    //         x.E1.E
+    Diagnostic(ErrorCode.ERR_IdentifierExpected, "").WithLocation(11, 15),
+    // (11,15): error CS1002: ; expected
+    //         x.E1.E
+    Diagnostic(ErrorCode.ERR_SemicolonExpected, "").WithLocation(11, 15),
+    // (11,9): error CS0118: 'x' is a variable but is used like a type
+    //         x.E1.E
+    Diagnostic(ErrorCode.ERR_BadSKknown, "x").WithArguments("x", "variable", "type").WithLocation(11, 9)
+                );
+
+            var tree = comp.SyntaxTrees[0];
+            var model = comp.GetSemanticModel(tree);
+
+            var node1 = tree.GetRoot().DescendantNodes().Where(n => n.IsKind(SyntaxKind.IdentifierName) && ((IdentifierNameSyntax)n).Identifier.ValueText == "E").Single().Parent;
+            Assert.Equal("x.E1.E", node1.ToString());
+            Assert.Equal(SyntaxKind.QualifiedName, node1.Kind());
+
+            var node2 = ((QualifiedNameSyntax)node1).Left;
+            Assert.Equal("x.E1", node2.ToString());
+
+            var symbolInfo2 = model.GetSymbolInfo(node2);
+            Assert.Null(symbolInfo2.Symbol);
+            Assert.Equal("event System.EventHandler Program.E1", symbolInfo2.CandidateSymbols.Single().ToTestDisplayString());
+            Assert.Equal(CandidateReason.NotATypeOrNamespace, symbolInfo2.CandidateReason);
+
+            var symbolInfo1 = model.GetSymbolInfo(node1);
+            Assert.Null(symbolInfo1.Symbol);
+            Assert.True(symbolInfo1.CandidateSymbols.IsEmpty);
         }
     }
 }

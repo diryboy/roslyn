@@ -300,7 +300,8 @@ class Hello
         [Fact]
         public void MutexStopsServerStarting()
         {
-            var mutexName = Guid.NewGuid().ToString("N");
+            var pipeName = Guid.NewGuid().ToString("N");
+            var mutexName = DesktopBuildClient.GetServerMutexName(pipeName);
 
             bool holdsMutex;
             using (var mutex = new Mutex(initiallyOwned: true,
@@ -311,7 +312,7 @@ class Hello
                 try
                 {
                     var host = new Mock<IClientConnectionHost>(MockBehavior.Strict);
-                    var result = VBCSCompiler.Run(mutexName, host.Object, keepAlive: null);
+                    var result = DesktopBuildServerController.RunServer(pipeName, host.Object, keepAlive: null);
                     Assert.Equal(CommonCompiler.Failed, result);
                 }
                 finally
@@ -324,7 +325,8 @@ class Hello
         [Fact]
         public void MutexAcquiredWhenRunningServer()
         {
-            var mutexName = Guid.NewGuid().ToString("N");
+            var pipeName = Guid.NewGuid().ToString("N");
+            var mutexName = DesktopBuildClient.GetServerMutexName(pipeName);
             var host = new Mock<IClientConnectionHost>(MockBehavior.Strict);
             host
                 .Setup(x => x.CreateListenTask(It.IsAny<CancellationToken>()))
@@ -333,12 +335,24 @@ class Hello
                     // Use a thread instead of Task to guarantee this code runs on a different
                     // thread and we can validate the mutex state. 
                     var source = new TaskCompletionSource<bool>();
-                    var thread = new Thread(_ => 
+                    var thread = new Thread(_ =>
                     {
-                        Mutex mutex;
-                        Assert.True(Mutex.TryOpenExisting(mutexName, out mutex));
-                        Assert.False(mutex.WaitOne(millisecondsTimeout: 0));
-                        source.SetResult(true);
+                        Mutex mutex = null;
+                        try
+                        {
+                            Assert.True(Mutex.TryOpenExisting(mutexName, out mutex));
+                            Assert.False(mutex.WaitOne(millisecondsTimeout: 0));
+                            source.SetResult(true);
+                        }
+                        catch (Exception ex)
+                        {
+                            source.SetException(ex);
+                            throw;
+                        }
+                        finally
+                        {
+                            mutex?.Dispose();
+                        }
                     });
 
                     // Synchronously wait here.  Don't returned a Task value because we need to 
@@ -350,7 +364,7 @@ class Hello
                     return new TaskCompletionSource<IClientConnection>().Task;
                 });
 
-            var result = VBCSCompiler.Run(mutexName, host.Object, keepAlive: TimeSpan.FromSeconds(1));
+            var result = DesktopBuildServerController.RunServer(pipeName, host.Object, keepAlive: TimeSpan.FromSeconds(1));
             Assert.Equal(CommonCompiler.Succeeded, result);
         }
 

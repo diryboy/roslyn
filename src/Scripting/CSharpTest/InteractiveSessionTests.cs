@@ -6,19 +6,18 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Scripting.Hosting;
 using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.CodeAnalysis.Scripting.Hosting;
 using Microsoft.CodeAnalysis.Scripting.Test;
 using Microsoft.CodeAnalysis.Test.Utilities;
 using Roslyn.Test.Utilities;
 using Xunit;
-
-#pragma warning disable RS0003 // Do not directly await a Task
 
 namespace Microsoft.CodeAnalysis.CSharp.Scripting.UnitTests
 {
@@ -38,7 +37,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Scripting.UnitTests
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, cryptoPublicKey: TestResources.TestKeys.PublicKey_ce65828c82a341f2);
 
         internal static readonly Assembly HostAssembly = typeof(InteractiveSessionTests).GetTypeInfo().Assembly;
-        
+
         #region Namespaces, Types
 
         [Fact]
@@ -420,7 +419,7 @@ pi = i + j + k + l;
         [Fact]
         public void CompilationChain_GlobalNamespaceAndUsings()
         {
-            var result = 
+            var result =
                 CSharpScript.Create("using InteractiveFixtures.C;", ScriptOptions.Default.AddReferences(HostAssembly)).
                 ContinueWith("using InteractiveFixtures.C;").
                 ContinueWith("System.Environment.ProcessorCount").
@@ -521,7 +520,7 @@ Environment.ProcessorCount
         [Fact]
         public void CompilationChain_DefinitionHidesGlobal()
         {
-            var result = 
+            var result =
                 CSharpScript.Create("int System = 1;").
                 ContinueWith("System").
                 EvaluateAsync().Result;
@@ -660,7 +659,7 @@ GetHashCode();
 ToString();
 ReferenceEquals(null, null);";
 
-            ScriptingTestHelpers.AssertCompilationError(state0, src1, 
+            ScriptingTestHelpers.AssertCompilationError(state0, src1,
                 // (2,1): error CS0103: The name 'Equals' does not exist in the current context
                 Diagnostic(ErrorCode.ERR_NameNotInContext, "Equals").WithArguments("Equals"),
                 // (3,1): error CS0103: The name 'GetHashCode' does not exist in the current context
@@ -885,7 +884,7 @@ result
         {
             var f = CSharpScript.RunAsync("using System;").
                 ContinueWith("int Sqr(int x) {return x*x;}").
-                ContinueWith<Func<int, int>>("new Func<int,int>(Sqr)").Result.ReturnValue; 
+                ContinueWith<Func<int, int>>("new Func<int,int>(Sqr)").Result.ReturnValue;
 
             Assert.Equal(4, f(2));
         }
@@ -1098,7 +1097,7 @@ static T G<T>(T t, Func<T, Task<T>> f)
                 AddReferences(typeof(Task).GetTypeInfo().Assembly).
                 AddImports("System.Threading.Tasks");
 
-            var state = 
+            var state =
                 CSharpScript.RunAsync("int i = 0;", options).
                 ContinueWith("await Task.Delay(1); i++;").
                 ContinueWith("await Task.Delay(1); i++;").
@@ -1154,7 +1153,7 @@ new Metadata.ICSPropImpl()
             string fileName = Path.GetFileName(path);
             string dir = Path.Combine(Path.GetDirectoryName(path), "subdir");
 
-            var script = CSharpScript.Create($@"#r ""..\{fileName}""", 
+            var script = CSharpScript.Create($@"#r ""..\{fileName}""",
                 ScriptOptions.Default.WithFilePath(Path.Combine(dir, "a.csx")));
 
             script.GetCompilation().VerifyDiagnostics();
@@ -1174,7 +1173,7 @@ new Metadata.ICSPropImpl()
 
             script.GetCompilation().VerifyDiagnostics();
         }
-        
+
         [Fact, WorkItem(6457, "https://github.com/dotnet/roslyn/issues/6457")]
         public async Task MissingReferencesReuse()
         {
@@ -1196,7 +1195,7 @@ public class C
             var s0 = await CSharpScript.RunAsync("C c;", ScriptOptions.Default.WithReferences(libFile.Path));
             var s1 = await s0.ContinueWithAsync("c = new C()");
         }
-        
+
         [Fact]
         public async Task SharedLibCopy_Identical_Weak()
         {
@@ -1721,7 +1720,7 @@ public class Lib2
             var libWinmd = TestCompilationFactory.CreateCSharpCompilationWithMscorlib(@"public class C { public string F = ""winmd""; }", libName);
 
             var main = TestCompilationFactory.CreateCSharpCompilation(
-                @"public static class M { public static readonly C X = new C(); }", 
+                @"public static class M { public static readonly C X = new C(); }",
                 new MetadataReference[] { TestReferences.NetFx.v4_0_30319.mscorlib, libExe.ToMetadataReference() },
                 mainName);
 
@@ -1782,7 +1781,7 @@ public class E { }
 
             var libRef = CreateCSharpCompilationWithMscorlib(source, "lib").EmitToImageReference();
 
-            var script = CSharpScript.Create(@"new C()", 
+            var script = CSharpScript.Create(@"new C()",
                 ScriptOptions.Default.WithReferences(libRef.WithAliases(new[] { "Hidden" })).WithImports("Hidden::N"));
 
             script.Compile().Verify();
@@ -1844,7 +1843,7 @@ d
                 Diagnostic(ErrorCode.ERR_SingleTypeNameNotFound).WithArguments("?2"));
 
             options = ScriptOptions.Default.AddImports("");
-            
+
             ScriptingTestHelpers.AssertCompilationError(() => CSharpScript.EvaluateAsync("1", options),
                 // error CS7088: Invalid 'Usings' value: ''.
                 Diagnostic(ErrorCode.ERR_BadCompilationOptionValue).WithArguments("Usings", ""));
@@ -1971,7 +1970,7 @@ new List<ArgumentException>()
         public void HostObjectBinding_PublicClassMembers()
         {
             var c = new C();
-            
+
             var s0 = CSharpScript.RunAsync<int>("x + Y + Z()", globals: c);
             Assert.Equal(6, s0.Result.ReturnValue);
 
@@ -1996,7 +1995,7 @@ new List<ArgumentException>()
         public async Task HostObjectBinding_Interface()
         {
             var c = new C();
-            
+
             var s0 = await CSharpScript.RunAsync<int>("Z()", globals: c, globalsType: typeof(I));
             Assert.Equal(3, s0.ReturnValue);
 
@@ -2013,7 +2012,7 @@ new List<ArgumentException>()
         public void HostObjectBinding_PrivateClass()
         {
             var c = new PrivateClass();
-            
+
             ScriptingTestHelpers.AssertCompilationError(() => CSharpScript.EvaluateAsync("Z()", globals: c),
                 // (1,1): error CS0122: '<Fully Qualified Name of PrivateClass>.Z()' is inaccessible due to its protection level
                 Diagnostic(ErrorCode.ERR_BadAccess, "Z").WithArguments(typeof(PrivateClass).FullName.Replace("+", ".") + ".Z()"));
@@ -2079,7 +2078,7 @@ new List<ArgumentException>()
             Assert.Equal(1, r1.Result);
         }
 
-        [Fact]
+        [Fact(Skip = "https://github.com/dotnet/roslyn/issues/8332")]
         public void HostObjectAssemblyReference1()
         {
             var scriptCompilation = CSharpScript.Create(
@@ -2104,7 +2103,7 @@ new List<ArgumentException>()
 
                     case "Microsoft.CodeAnalysis":
                     default:
-                        AssertEx.SetEqual(new[] { "<implicit>", "<host>" },  assemblyAndAliases.Item2);
+                        AssertEx.SetEqual(new[] { "<implicit>", "<host>" }, assemblyAndAliases.Item2);
                         break;
                 }
             }
@@ -2187,6 +2186,218 @@ typeof(Microsoft.CodeAnalysis.Scripting.Script)
                         break;
                 }
             }
+        }
+
+        #endregion
+
+        #region Exceptions
+
+        [Fact]
+        [WorkItem(6580, "https://github.com/dotnet/roslyn/issues/6580")]
+        [WorkItem(10883, "https://github.com/dotnet/roslyn/issues/10883")]
+        public async Task PreservingDeclarationsOnException1()
+        {
+            var s0 = CSharpScript.Create(@"
+int i = 10;
+throw new System.Exception(""Bang!"");
+int j = 2;
+");
+
+            var s1 = s0.ContinueWith(@"
+int F() => i + j;
+");
+
+            var state1 = await s1.RunAsync(catchException: e => true);
+
+            Assert.Equal("Bang!", state1.Exception.Message);
+
+            var state2 = await state1.ContinueWithAsync<int>("F()");
+
+            Assert.Equal(10, state2.ReturnValue);
+        }
+
+        [Fact]
+        [WorkItem(6580, "https://github.com/dotnet/roslyn/issues/6580")]
+        [WorkItem(10883, "https://github.com/dotnet/roslyn/issues/10883")]
+        public async Task PreservingDeclarationsOnException2()
+        {
+            var s0 = CSharpScript.Create(@"
+int i = 100;
+");
+
+            var s1 = s0.ContinueWith(@"
+int j = 20;
+throw new System.Exception(""Bang!"");
+int k = 3;
+");
+
+            var s2 = s1.ContinueWith(@"
+int F() => i + j + k;
+");
+
+            var state2 = await s2.RunAsync(catchException: e => true);
+
+            Assert.Equal("Bang!", state2.Exception.Message);
+
+            var state3 = await state2.ContinueWithAsync<int>("F()");
+
+            Assert.Equal(120, state3.ReturnValue);
+        }
+
+        [Fact]
+        [WorkItem(6580, "https://github.com/dotnet/roslyn/issues/6580")]
+        [WorkItem(10883, "https://github.com/dotnet/roslyn/issues/10883")]
+        public async Task PreservingDeclarationsOnException3()
+        {
+            var s0 = CSharpScript.Create(@"
+int i = 1000;
+");
+            var s1 = s0.ContinueWith(@"
+int j = 200;
+throw new System.Exception(""Bang!"");
+int k = 30;
+");
+            var s2 = s1.ContinueWith(@"
+int l = 4;
+");
+            var s3 = s2.ContinueWith(@"
+int F() => i + j + k + l;
+");
+
+            var state3 = await s3.RunAsync(catchException: e => true);
+
+            Assert.Equal("Bang!", state3.Exception.Message);
+
+            var state4 = await state3.ContinueWithAsync<int>("F()");
+
+            Assert.Equal(1200, state4.ReturnValue);
+        }
+
+        [Fact]
+        [WorkItem(6580, "https://github.com/dotnet/roslyn/issues/6580")]
+        [WorkItem(10883, "https://github.com/dotnet/roslyn/issues/10883")]
+        public async Task PreservingDeclarationsOnException4()
+        {
+            var state0 = await CSharpScript.RunAsync(@"
+int i = 1000;
+");
+            var state1 = await state0.ContinueWithAsync(@"
+int j = 200;
+throw new System.Exception(""Bang 1!"");
+int k = 30;
+", catchException: e => true);
+
+            Assert.Equal("Bang 1!", state1.Exception.Message);
+
+            var state2 = await state1.ContinueWithAsync<int>(@"
+int l = 4;
+throw new System.Exception(""Bang 2!"");
+1
+", catchException: e => true);
+
+            Assert.Equal("Bang 2!", state2.Exception.Message);
+
+            var state4 = await state2.ContinueWithAsync(@"
+i + j + k + l
+");
+            Assert.Equal(1204, state4.ReturnValue);
+        }
+
+        [Fact]
+        public async Task PreservingDeclarationsOnCancellation1()
+        {
+            var cancellationSource = new CancellationTokenSource();
+
+            var globals = new StrongBox<CancellationTokenSource>();
+            globals.Value = cancellationSource;
+            
+            var s0 = CSharpScript.Create(@"
+int i = 1000;
+", globalsType: globals.GetType());
+
+            var s1 = s0.ContinueWith(@"
+int j = 200;
+Value.Cancel();
+int k = 30;
+");
+            // cancellation exception is thrown just before we start evaluating s2:
+            var s2 = s1.ContinueWith(@"
+int l = 4;
+");
+            var s3 = s2.ContinueWith(@"
+int F() => i + j + k + l;
+");
+
+            var state3 = await s3.RunAsync(globals, catchException: e => true, cancellationToken: cancellationSource.Token);
+
+            Assert.IsType<OperationCanceledException>(state3.Exception);
+
+            var state4 = await state3.ContinueWithAsync<int>("F()");
+
+            Assert.Equal(1230, state4.ReturnValue);
+        }
+
+        [Fact]
+        public async Task PreservingDeclarationsOnCancellation2()
+        {
+            var cancellationSource = new CancellationTokenSource();
+
+            var globals = new StrongBox<CancellationTokenSource>();
+            globals.Value = cancellationSource;
+
+            var s0 = CSharpScript.Create(@"
+int i = 1000;
+", globalsType: globals.GetType());
+
+            var s1 = s0.ContinueWith(@"
+int j = 200;
+int k = 30;
+");
+            var s2 = s1.ContinueWith(@"
+int l = 4;
+Value.Cancel();
+");
+            // cancellation exception is thrown just before we start evaluating s3:
+            var s3 = s2.ContinueWith(@"
+int F() => i + j + k + l;
+");
+
+            var state3 = await s3.RunAsync(globals, catchException: e => true, cancellationToken: cancellationSource.Token);
+
+            Assert.IsType<OperationCanceledException>(state3.Exception);
+
+            var state4 = await state3.ContinueWithAsync<int>("F()");
+
+            Assert.Equal(1234, state4.ReturnValue);
+        }
+
+        [Fact]
+        public async Task PreservingDeclarationsOnCancellation3()
+        {
+            var cancellationSource = new CancellationTokenSource();
+
+            var globals = new StrongBox<CancellationTokenSource>();
+            globals.Value = cancellationSource;
+
+            var s0 = CSharpScript.Create(@"
+int i = 1000;
+", globalsType: globals.GetType());
+
+            var s1 = s0.ContinueWith(@"
+int j = 200;
+Value.Cancel();
+int k = 30;
+");
+            // cancellation exception is thrown just before we start evaluating s2:
+            var s2 = s1.ContinueWith(@"
+int l = 4;
+");
+            var s3 = s2.ContinueWith(@"
+int F() => i + j + k + l;
+");
+
+            await Assert.ThrowsAsync<OperationCanceledException>(() => 
+                s3.RunAsync(globals, catchException: e => !(e is OperationCanceledException), cancellationToken: cancellationSource.Token));
         }
 
         #endregion

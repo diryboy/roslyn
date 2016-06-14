@@ -15,6 +15,7 @@ using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.Symbols;
 using Microsoft.CodeAnalysis.Text;
 using Roslyn.Utilities;
+using ILOpCode = Microsoft.CodeAnalysis.CodeGen.ILOpCode;
 
 namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 {
@@ -102,8 +103,8 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                 }
                 else
                 {
-                    _ilEmitStyle = IsDebugPlus() ? 
-                        ILEmitStyle.DebugFriendlyRelease : 
+                    _ilEmitStyle = IsDebugPlus() ?
+                        ILEmitStyle.DebugFriendlyRelease :
                         ILEmitStyle.Release;
                 }
             }
@@ -119,8 +120,8 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
             try
             {
                 _boundBody = Optimizer.Optimize(
-                    boundBody, 
-                    debugFriendly: _ilEmitStyle != ILEmitStyle.Release, 
+                    boundBody,
+                    debugFriendly: _ilEmitStyle != ILEmitStyle.Release,
                     stackLocals: out _stackLocals);
             }
             catch (BoundTreeVisitor.CancelledByStackGuardException ex)
@@ -134,7 +135,7 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
 
         private bool IsDebugPlus()
         {
-            return this._module.Compilation.Options.DebugPlusMode;
+            return _module.Compilation.Options.DebugPlusMode;
         }
 
         private LocalDefinition LazyReturnTemp
@@ -145,6 +146,10 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                 if (result == null)
                 {
                     Debug.Assert(!_method.ReturnsVoid, "returning something from void method?");
+                    var slotConstraints = _method.RefKind == RefKind.None
+                        ? LocalSlotConstraints.None
+                        : LocalSlotConstraints.ByRef;
+
 
                     var bodySyntax = _methodBodySyntaxOpt;
                     if (_ilEmitStyle == ILEmitStyle.Debug && bodySyntax != null)
@@ -159,14 +164,14 @@ namespace Microsoft.CodeAnalysis.CSharp.CodeGen
                             kind: localSymbol.SynthesizedKind,
                             id: new LocalDebugId(syntaxOffset, ordinal: 0),
                             pdbAttributes: localSymbol.SynthesizedKind.PdbAttributes(),
-                            constraints: LocalSlotConstraints.None,
+                            constraints: slotConstraints,
                             isDynamic: false,
                             dynamicTransformFlags: ImmutableArray<TypedConstant>.Empty,
-                            isSlotReusable:  false);
+                            isSlotReusable: false);
                     }
                     else
                     {
-                        result = AllocateTemp(_method.ReturnType, _boundBody.Syntax);
+                        result = AllocateTemp(_method.ReturnType, _boundBody.Syntax, slotConstraints);
                     }
 
                     _returnTemp = result;

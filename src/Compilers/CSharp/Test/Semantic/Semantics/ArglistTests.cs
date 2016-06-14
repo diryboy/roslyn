@@ -209,18 +209,19 @@ public struct C
 
             var comp = CreateCompilationWithMscorlib(text);
             comp.VerifyDiagnostics(
-// (8,30): error CS1601: Cannot make reference to variable of type 'System.TypedReference'
-//         TypedReference tr2 = __makeref(tr1); // CS1601
-Diagnostic(ErrorCode.ERR_MethodArgCantBeRefAny, "__makeref(tr1)").WithArguments("System.TypedReference"),
-// (9,40): error CS1510: A ref or out argument must be an assignable variable
-//         TypedReference tr3 = __makeref(123); // CS1510
-Diagnostic(ErrorCode.ERR_RefLvalueExpected, "123"),
-// (10,40): error CS0206: A property or indexer may not be passed as an out or ref parameter
-//         TypedReference tr4 = __makeref(P); // CS0206
-Diagnostic(ErrorCode.ERR_RefProperty, "P").WithArguments("C.P"),
-// (11,40): error CS0199: A static readonly field cannot be passed ref or out (except in a static constructor)
-//         TypedReference tr5 = __makeref(R);
-Diagnostic(ErrorCode.ERR_RefReadonlyStatic, "R")
+    // (8,30): error CS1601: Cannot make reference to variable of type 'TypedReference'
+    //         TypedReference tr2 = __makeref(tr1); // CS1601
+    Diagnostic(ErrorCode.ERR_MethodArgCantBeRefAny, "__makeref(tr1)").WithArguments("System.TypedReference").WithLocation(8, 30),
+    // (9,40): error CS1510: A ref or out value must be an assignable variable
+    //         TypedReference tr3 = __makeref(123); // CS1510
+    Diagnostic(ErrorCode.ERR_RefLvalueExpected, "123").WithLocation(9, 40),
+    // (10,40): error CS0206: A property or indexer may not be passed as an out or ref parameter
+    //         TypedReference tr4 = __makeref(P); // CS0206
+    Diagnostic(ErrorCode.ERR_RefProperty, "P").WithArguments("C.P").WithLocation(10, 40),
+    // (11,40): error CS0199: A static readonly field cannot be used as a ref or out value (except in a static constructor)
+    //         TypedReference tr5 = __makeref(R); // CS0199
+    Diagnostic(ErrorCode.ERR_RefReadonlyStatic, "R").WithLocation(11, 40)
+
                 );
         }
 
@@ -1390,6 +1391,36 @@ namespace ConsoleApplication21
     //             NativeOverlapped* overlapped = AllocateNativeOverlapped(() => { });
     Diagnostic(ErrorCode.ERR_NoCorrespondingArgument, "AllocateNativeOverlapped").WithArguments("context", "ConsoleApplication21.FooBar.AllocateNativeOverlapped(System.Threading.IOCompletionCallback, object, byte[])").WithLocation(12, 44)
 );
+        }
+
+        [Fact, WorkItem(8152, "https://github.com/dotnet/roslyn/issues/8152")]
+        public void DuplicateDeclaration()
+        {
+            var source =
+@"
+public class SpecialCases
+{
+    public void ArgListMethod(__arglist)
+    {
+        ArgListMethod(__arglist(""""));
+    }
+    public void ArgListMethod(__arglist)
+    {
+        ArgListMethod(__arglist(""""));
+    }
+}
+";
+            CreateCompilationWithMscorlib(source, options: TestOptions.UnsafeReleaseDll).VerifyDiagnostics(
+    // (8,17): error CS0111: Type 'SpecialCases' already defines a member called 'ArgListMethod' with the same parameter types
+    //     public void ArgListMethod(__arglist)
+    Diagnostic(ErrorCode.ERR_MemberAlreadyExists, "ArgListMethod").WithArguments("ArgListMethod", "SpecialCases").WithLocation(8, 17),
+    // (6,9): error CS0121: The call is ambiguous between the following methods or properties: 'SpecialCases.ArgListMethod(__arglist)' and 'SpecialCases.ArgListMethod(__arglist)'
+    //         ArgListMethod(__arglist(""));
+    Diagnostic(ErrorCode.ERR_AmbigCall, "ArgListMethod").WithArguments("SpecialCases.ArgListMethod(__arglist)", "SpecialCases.ArgListMethod(__arglist)").WithLocation(6, 9),
+    // (10,9): error CS0121: The call is ambiguous between the following methods or properties: 'SpecialCases.ArgListMethod(__arglist)' and 'SpecialCases.ArgListMethod(__arglist)'
+    //         ArgListMethod(__arglist(""));
+    Diagnostic(ErrorCode.ERR_AmbigCall, "ArgListMethod").WithArguments("SpecialCases.ArgListMethod(__arglist)", "SpecialCases.ArgListMethod(__arglist)").WithLocation(10, 9)
+                );
         }
     }
 }

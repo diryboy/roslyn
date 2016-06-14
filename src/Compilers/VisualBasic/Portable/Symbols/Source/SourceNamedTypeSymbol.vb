@@ -463,10 +463,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Symbols
             ' Check that the node's fully qualified name is not too long. Only check declarations that create types.
 
             Dim id As SyntaxToken = GetTypeIdentifierToken(node)
-
-            binder.DisallowTypeCharacter(id, diagBag)
-
-            Dim _6thArg As Object = Me.ContainingSymbol.ToErrorMessageArgument()
+            Binder.DisallowTypeCharacter(id, diagBag)
 
             Dim thisTypeIsEmbedded As Boolean = Me.IsEmbedded
 
@@ -551,7 +548,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Symbols
                                     CType(container, SourceMemberContainerTypeSymbol).IsPartial) Then
                                 Binder.ReportDiagnostic(diagBag, id, ERRID.ERR_TypeConflict6,
                                                         Me.GetKindText(), id.ToString, _3rdArg, s.Name,
-                                                        container.GetKindText(), _6thArg)
+                                                        container.GetKindText(), Me.ContainingSymbol.ToErrorMessageArgument(ERRID.ERR_TypeConflict6))
                             End If
 
                         End If
@@ -662,21 +659,22 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Symbols
 
             If (foundModifiers And DeclarationModifiers.Partial) = 0 Then
 
+                Dim errorCode = If(foundPartial, ERRID.WRN_TypeConflictButMerged6, ERRID.ERR_TypeConflict6)
+
                 ' Ensure multiple class declarations all have partial.  Report a warning if more than 2 declarations are missing partial.
                 ' VB allows one class declaration with partial and one declaration without partial because designer generated code
                 ' may not have specified partial. This allows user-code to force it. However, VB does not allow more than one declaration
                 ' to not have partial as this would (erroneously) make what would have been a error (duplicate declarations) compile.
-                Dim _6thArg As Object = Me.ContainingSymbol.ToErrorMessageArgument()
+                Dim _6thArg As Object = Me.ContainingSymbol.ToErrorMessageArgument(errorCode)
 
                 Dim identifier As String = GetTypeIdentifierToken(firstNode).ToString
-
                 Dim nodeKindText = Me.GetKindText()
 
-                Binder.ReportDiagnostic(diagBag, id, If(foundPartial, ERRID.WRN_TypeConflictButMerged6, ERRID.ERR_TypeConflict6),
-                                             nodeKindText, id.ToString,
-                                             nodeKindText, identifier,
-                                             Me.ContainingSymbol.GetKindText(),
-                                             _6thArg)
+                Binder.ReportDiagnostic(diagBag, id, errorCode,
+                                            nodeKindText, id.ToString,
+                                            nodeKindText, identifier,
+                                            Me.ContainingSymbol.GetKindText(),
+                                            _6thArg)
             End If
 
         End Sub
@@ -818,7 +816,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Symbols
 
             ' Handle type parameter identifier.
             Dim identSymbol = typeParamSyntax.Identifier
-            binder.DisallowTypeCharacter(identSymbol, diagBag, ERRID.ERR_TypeCharOnGenericParam)
+            Binder.DisallowTypeCharacter(identSymbol, diagBag, ERRID.ERR_TypeCharOnGenericParam)
             Dim name As String = identSymbol.ValueText
 
             ' Handle type parameter variance.
@@ -826,7 +824,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Symbols
             Dim variance As VarianceKind = VarianceKind.None
             If varianceKeyword.Kind <> SyntaxKind.None Then
                 If allowVarianceSpecifier Then
-                    variance = binder.DecodeVariance(varianceKeyword)
+                    variance = Binder.DecodeVariance(varianceKeyword)
                 Else
                     Binder.ReportDiagnostic(diagBag, varianceKeyword, ERRID.ERR_VarianceDisallowedHere)
                 End If
@@ -2031,7 +2029,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Symbols
                     If Not attrdata.HasErrors Then
                         Dim interfaceType As ComInterfaceType = Nothing
                         If attrdata.DecodeInterfaceTypeAttribute(interfaceType) AndAlso
-                            (interfaceType And ComInterfaceType.InterfaceIsIDispatch) <> 0 Then
+                            (interfaceType And Cci.Constants.ComInterfaceType_InterfaceIsIDispatch) <> 0 Then
 
                             arguments.GetOrCreateData(Of TypeEarlyWellKnownAttributeData).HasAttributeForExtensibleInterface = True
                         End If

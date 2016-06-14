@@ -7,7 +7,6 @@ using System.Linq;
 using Microsoft.CodeAnalysis.CSharp.Symbols;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp.Test.Utilities;
-using Microsoft.CodeAnalysis.Test.Utilities;
 using Xunit;
 using Roslyn.Test.Utilities;
 
@@ -6405,7 +6404,7 @@ struct TestStr
             var model = (CSharpSemanticModel)compilation.GetSemanticModel(tree);
             var binder = model.GetEnclosingBinder(methodBody.SpanStart);
             var diagnostics = DiagnosticBag.GetInstance();
-            var block = binder.BindBlock(methodBody, diagnostics);
+            var block = binder.BindEmbeddedBlock(methodBody, diagnostics);
             diagnostics.Free();
 
             // Rewriter should use Equals.
@@ -8615,61 +8614,6 @@ False
 }");
         }
 
-        [Fact(Skip = "This test can cause other tests running in parallel to fail because they might not have enough memory to succeed."), WorkItem(529600, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/529600")]
-        public void Bug529600()
-        {
-            string source = $@"
-class M
-{{
-    static void Main()
-    {{}}
-
-    const string C0 = ""{new string('0', 65000)}"";
-
-    const string C1 = C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 +
-                      C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 +
-                      C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 +
-                      C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 +
-                      C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 +
-                      C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 +
-                      C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 +
-                      C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 +
-                      C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 +
-                      C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 +
-                      C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 +
-                      C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 +
-                      C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 +
-                      C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 +
-                      C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 + C0 +
-                      C0;
-
-     const string C2 = C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 +
-                      C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 +
-                      C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 +
-                      C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 +
-                      C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 +
-                      C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 +
-                      C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 +
-                      C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 +
-                      C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 +
-                      C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 +
-                      C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 +
-                      C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 +
-                      C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 +
-                      C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 +
-                      C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 + C1 +
-                      C1;
-
-}}
-";
-            var compilation = CreateCompilationWithMscorlib(source);
-
-            var err = compilation.GetDiagnostics().Single();
-
-            Assert.Equal((int)ErrorCode.ERR_ConstantStringTooLong, err.Code);
-            Assert.Equal("Length of String constant exceeds current memory limit.  Try splitting the string into multiple constants.", err.GetMessage(EnsureEnglishUICulture.PreferredOrNull));
-        }
-
         [Fact, WorkItem(2075, "https://github.com/dotnet/roslyn/issues/2075")]
         public void NegateALiteral()
         {
@@ -8745,6 +8689,107 @@ operator IntHolder(int i)
 'y' is 5");
         }
 
+        [Fact, WorkItem(8190, "https://github.com/dotnet/roslyn/issues/8190")]
+        public void Issue8190_1()
+        {
+            string source = @"
+using System;
+
+namespace RoslynNullableStringRepro
+{
+  public class Program
+  {
+    public static void Main(string[] args)
+    {
+      NonNullableString? irony = ""abc"";
+      irony += ""def"";
+      string ynori = ""abc"";
+      ynori += (NonNullableString?)""def"";
+
+      Console.WriteLine(irony);
+      Console.WriteLine(ynori);
+
+      ynori += (NonNullableString?) null;
+      Console.WriteLine(ynori);
+    }
+  }
+
+  struct NonNullableString
+  {
+    NonNullableString(string value)
+    {
+      if (value == null)
+      {
+        throw new ArgumentNullException(nameof(value));
+      }
+
+      this.value = value;
+    }
+
+    readonly string value;
+
+    public override string ToString() => value;
+
+    public static implicit operator string(NonNullableString self) => self.value;
+
+    public static implicit operator NonNullableString(string value) => new NonNullableString(value);
+
+    public static string operator +(NonNullableString lhs, NonNullableString rhs) => lhs.value + rhs.value;
+  }
+}";
+            CompileAndVerify(source: source, expectedOutput: "abcdef" + Environment.NewLine + "abcdef" + Environment.NewLine + "abcdef");
+        }
+
+        [Fact, WorkItem(8190, "https://github.com/dotnet/roslyn/issues/8190")]
+        public void Issue8190_2()
+        {
+            string source = @"
+using System;
+
+namespace RoslynNullableIntRepro
+{
+  public class Program
+  {
+    public static void Main(string[] args)
+    {
+      NonNullableInt? irony = 1;
+      irony += 2;
+      int? ynori = 1;
+      ynori += (NonNullableInt?) 2;
+
+      Console.WriteLine(irony);
+      Console.WriteLine(ynori);
+
+      ynori += (NonNullableInt?) null;
+      Console.WriteLine(ynori);
+    }
+  }
+
+  struct NonNullableInt
+  {
+    NonNullableInt(int? value)
+    {
+      if (value == null)
+      {
+        throw new ArgumentNullException();
+      }
+
+      this.value = value;
+    }
+
+    readonly int? value;
+
+    public override string ToString() {return value.ToString();}
+
+    public static implicit operator int? (NonNullableInt self) {return self.value;}
+
+    public static implicit operator NonNullableInt(int? value) {return new NonNullableInt(value);}
+
+    public static int? operator +(NonNullableInt lhs, NonNullableInt rhs) { return lhs.value + rhs.value; }
+  }
+}";
+            CompileAndVerify(source: source, expectedOutput: "3" + Environment.NewLine + "3" + Environment.NewLine);
+        }
         [Fact, WorkItem(4027, "https://github.com/dotnet/roslyn/issues/4027")]
         public void NotSignExtendedOperand()
         {

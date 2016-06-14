@@ -7728,12 +7728,12 @@ class Program
             CompileAndVerify(source, expectedOutput: @"pass
 pass").VerifyDiagnostics();
             CreateCompilationWithMscorlib(source, options: TestOptions.ReleaseDll, parseOptions: TestOptions.Regular.WithStrictFeature()).VerifyDiagnostics(
-                // (12,36): error CS1657: Cannot pass 'M' as a ref or out argument because it is a 'method group'
-                //         Action a1 = new Action(ref M);
-                Diagnostic(ErrorCode.ERR_RefReadonlyLocalCause, "M").WithArguments("M", "method group").WithLocation(12, 36),
-                // (14,36): error CS0149: Method name expected
-                //         Action a2 = new Action(out a1);
-                Diagnostic(ErrorCode.ERR_MethodNameExpected, "a1").WithLocation(14, 36)
+    // (12,36): error CS1657: Cannot use 'M' as a ref or out value because it is a 'method group'
+    //         Action a1 = new Action(ref M);
+    Diagnostic(ErrorCode.ERR_RefReadonlyLocalCause, "M").WithArguments("M", "method group").WithLocation(12, 36),
+    // (14,36): error CS0149: Method name expected
+    //         Action a2 = new Action(out a1);
+    Diagnostic(ErrorCode.ERR_MethodNameExpected, "a1").WithLocation(14, 36)
                 );
         }
 
@@ -8353,7 +8353,7 @@ public static class Class
         System.Console.WriteLine(""RemoveDetail"");
     }
 }";
-            var compilation = CreateCompilationWithMscorlib45(source, options:TestOptions.ReleaseExe);
+            var compilation = CreateCompilationWithMscorlib45(source, options: TestOptions.ReleaseExe);
             CompileAndVerify(compilation, expectedOutput:
 @"RemoveDetail
 RemoveDetail
@@ -8401,6 +8401,5 @@ class D
             Assert.Equal("void D.M(System.Int32 i)", candidates[0].ToTestDisplayString());
             Assert.Equal("void D.M(System.Double d)", candidates[1].ToTestDisplayString());
         }
-
     }
 }

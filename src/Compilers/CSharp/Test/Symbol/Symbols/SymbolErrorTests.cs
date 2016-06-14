@@ -1033,25 +1033,96 @@ class C
   }
 }";
             // Triage decision was made to have this be a parse error as the grammar specifies it as such.
-            CreateCompilationWithMscorlib(text).VerifyDiagnostics(
+            // TODO: vsadov, the error recovery would be much nicer here if we consumed "int", bu tneed to consider other cases.
+            CreateCompilationWithMscorlib(text, parseOptions: TestOptions.Regular.WithTuplesFeature()).VerifyDiagnostics(
+    // (5,11): error CS1001: Identifier expected
+    //     int F<int>() { }  // CS0081
+    Diagnostic(ErrorCode.ERR_IdentifierExpected, "int").WithLocation(5, 11),
+    // (5,11): error CS1003: Syntax error, '>' expected
+    //     int F<int>() { }  // CS0081
+    Diagnostic(ErrorCode.ERR_SyntaxError, "int").WithArguments(">", "int").WithLocation(5, 11),
+    // (5,11): error CS1003: Syntax error, '(' expected
+    //     int F<int>() { }  // CS0081
+    Diagnostic(ErrorCode.ERR_SyntaxError, "int").WithArguments("(", "int").WithLocation(5, 11),
+    // (5,14): error CS1001: Identifier expected
+    //     int F<int>() { }  // CS0081
+    Diagnostic(ErrorCode.ERR_IdentifierExpected, ">").WithLocation(5, 14),
+    // (5,14): error CS1003: Syntax error, ',' expected
+    //     int F<int>() { }  // CS0081
+    Diagnostic(ErrorCode.ERR_SyntaxError, ">").WithArguments(",", ">").WithLocation(5, 14),
+    // (5,15): error CS1003: Syntax error, ',' expected
+    //     int F<int>() { }  // CS0081
+    Diagnostic(ErrorCode.ERR_SyntaxError, "(").WithArguments(",", "(").WithLocation(5, 15),
+    // (5,15): error CS8200: Tuple must contain at least two elements.
+    //     int F<int>() { }  // CS0081
+    Diagnostic(ErrorCode.ERR_TupleTooFewElements, "()").WithLocation(5, 15),
+    // (5,18): error CS1001: Identifier expected
+    //     int F<int>() { }  // CS0081
+    Diagnostic(ErrorCode.ERR_IdentifierExpected, "{").WithLocation(5, 18),
+    // (5,18): error CS1026: ) expected
+    //     int F<int>() { }  // CS0081
+    Diagnostic(ErrorCode.ERR_CloseParenExpected, "{").WithLocation(5, 18),
+    // (5,15): error CS8200: Tuple must contain at least two elements.
+    //     int F<int>() { }  // CS0081
+    Diagnostic(ErrorCode.ERR_TupleTooFewElements, "()").WithLocation(5, 15),
+    // (5,9): error CS0161: 'C.F<>(int, ?)': not all code paths return a value
+    //     int F<int>() { }  // CS0081
+    Diagnostic(ErrorCode.ERR_ReturnExpected, "F").WithArguments("NS.C.F<>(int, ?)").WithLocation(5, 9)
+    );
+        }
+
+        /// <summary>
+        /// Currently parser error 1001, 1003.  Is that good enough?
+        /// </summary>
+        [Fact()]
+        public void CS0081ERR_TypeParamMustBeIdentifier01WithCSharp6()
+        {
+            var text = @"namespace NS
+{
+  class C
+  {
+    int F<int>() { }  // CS0081
+  }
+}";
+            // Triage decision was made to have this be a parse error as the grammar specifies it as such.
+            CreateCompilationWithMscorlib(Parse(text, options: TestOptions.Regular.WithLanguageVersion(LanguageVersion.CSharp6))).VerifyDiagnostics(
                 // (5,11): error CS1001: Identifier expected
                 //     int F<int>() { }  // CS0081
-                Diagnostic(ErrorCode.ERR_IdentifierExpected, "int"),
+                Diagnostic(ErrorCode.ERR_IdentifierExpected, "int").WithLocation(5, 11),
                 // (5,11): error CS1003: Syntax error, '>' expected
                 //     int F<int>() { }  // CS0081
-                Diagnostic(ErrorCode.ERR_SyntaxError, "int").WithArguments(">", "int"),
+                Diagnostic(ErrorCode.ERR_SyntaxError, "int").WithArguments(">", "int").WithLocation(5, 11),
                 // (5,11): error CS1003: Syntax error, '(' expected
                 //     int F<int>() { }  // CS0081
-                Diagnostic(ErrorCode.ERR_SyntaxError, "int").WithArguments("(", "int"),
+                Diagnostic(ErrorCode.ERR_SyntaxError, "int").WithArguments("(", "int").WithLocation(5, 11),
                 // (5,14): error CS1001: Identifier expected
                 //     int F<int>() { }  // CS0081
-                Diagnostic(ErrorCode.ERR_IdentifierExpected, ">"),
+                Diagnostic(ErrorCode.ERR_IdentifierExpected, ">").WithLocation(5, 14),
                 // (5,14): error CS1003: Syntax error, ',' expected
                 //     int F<int>() { }  // CS0081
-                Diagnostic(ErrorCode.ERR_SyntaxError, ">").WithArguments(",", ">"),
-                // (5,9): error CS0161: 'NS.C.F<>(int)': not all code paths return a value
+                Diagnostic(ErrorCode.ERR_SyntaxError, ">").WithArguments(",", ">").WithLocation(5, 14),
+                // (5,15): error CS1003: Syntax error, ',' expected
                 //     int F<int>() { }  // CS0081
-                Diagnostic(ErrorCode.ERR_ReturnExpected, "F").WithArguments("NS.C.F<>(int)"));
+                Diagnostic(ErrorCode.ERR_SyntaxError, "(").WithArguments(",", "(").WithLocation(5, 15),
+                // (5,15): error CS8200: Tuple must contain at least two elements.
+                //     int F<int>() { }  // CS0081
+                Diagnostic(ErrorCode.ERR_TupleTooFewElements, "()").WithLocation(5, 15),
+                // (5,15): error CS8058: Feature 'tuples' is experimental and unsupported; use '/features:tuples' to enable.
+                //     int F<int>() { }  // CS0081
+                Diagnostic(ErrorCode.ERR_FeatureIsExperimental, "()").WithArguments("tuples", "tuples").WithLocation(5, 15),
+                // (5,18): error CS1001: Identifier expected
+                //     int F<int>() { }  // CS0081
+                Diagnostic(ErrorCode.ERR_IdentifierExpected, "{").WithLocation(5, 18),
+                // (5,18): error CS1026: ) expected
+                //     int F<int>() { }  // CS0081
+                Diagnostic(ErrorCode.ERR_CloseParenExpected, "{").WithLocation(5, 18),
+                // (5,15): error CS8200: Tuple must contain at least two elements.
+                //     int F<int>() { }  // CS0081
+                Diagnostic(ErrorCode.ERR_TupleTooFewElements, "()").WithLocation(5, 15),
+                // (5,9): error CS0161: 'C.F<>(int, ?)': not all code paths return a value
+                //     int F<int>() { }  // CS0081
+                Diagnostic(ErrorCode.ERR_ReturnExpected, "F").WithArguments("NS.C.F<>(int, ?)").WithLocation(5, 9)
+                );
         }
 
         [Fact]
@@ -1688,6 +1759,7 @@ struct Foo
     public virtual int this[int x] { get { return 1;} set {;} }
     // use long for to prevent signature clash
     public abstract int this[long x] { get; set; }
+    public sealed override string ToString() => null;
 }
 ";
             CreateCompilationWithMscorlib(text).VerifyDiagnostics(
@@ -1714,7 +1786,10 @@ struct Foo
                 Diagnostic(ErrorCode.ERR_BadMemberFlag, "Bar5").WithArguments("abstract").WithLocation(8, 47),
                 // (9,46): error CS0106: The modifier 'virtual' is not valid for this item
                 //     public virtual event System.EventHandler Bar6;
-                Diagnostic(ErrorCode.ERR_BadMemberFlag, "Bar6").WithArguments("virtual").WithLocation(9, 46));
+                Diagnostic(ErrorCode.ERR_BadMemberFlag, "Bar6").WithArguments("virtual").WithLocation(9, 46),
+                // (15,35): error CS0106: The modifier 'sealed' is not valid for this item
+                //      public sealed override string ToString() => null;
+                Diagnostic(ErrorCode.ERR_BadMemberFlag, "ToString").WithArguments("sealed").WithLocation(15, 35));
         }
 
         [Fact]
@@ -7958,7 +8033,7 @@ Diagnostic(ErrorCode.ERR_CantChangeReturnTypeOnOverride, "GM").WithArguments("GG
         [Fact]
         public void CS0509ERR_CantDeriveFromSealedType01()
         {
-            var source = 
+            var source =
 @"namespace NS
 {
     public struct stx { }
@@ -7980,7 +8055,7 @@ Diagnostic(ErrorCode.ERR_CantChangeReturnTypeOnOverride, "GM").WithArguments("GG
         [Fact]
         public void CS0509ERR_CantDeriveFromSealedType02()
         {
-            var source = 
+            var source =
 @"namespace N1 { enum E { A, B } }
 namespace N2
 {
@@ -8004,7 +8079,7 @@ namespace N2
         [Fact]
         public void CS0513ERR_AbstractInConcreteClass01()
         {
-            var source = 
+            var source =
 @"namespace NS
 {
     public class clx
@@ -9341,7 +9416,7 @@ public class Clx
         public void CS0542ERR_MemberNameSameAsType02()
         {
             // No errors for names from explicit implementations.
-            var source = 
+            var source =
 @"interface IM
 {
     void C();
@@ -10723,7 +10798,7 @@ class Class2 { }
         [Fact]
         public void CS0621ERR_VirtualPrivate02()
         {
-            var source = 
+            var source =
 @"abstract class A
 {
     abstract object P { get; }
@@ -10954,7 +11029,7 @@ public class Test
         [Fact]
         public void CS0644ERR_DeriveFromEnumOrValueType()
         {
-            var source = 
+            var source =
 @"using System;
 namespace N
 {
@@ -12378,7 +12453,7 @@ static class C
         [Fact]
         public void CS0713ERR_StaticDerivedFromNonObject01()
         {
-            var source = 
+            var source =
 @"namespace NS
 {
     public class Base
@@ -12410,7 +12485,7 @@ static class C
         [Fact]
         public void CS0713ERR_StaticDerivedFromNonObject02()
         {
-            var source = 
+            var source =
 @"delegate void A();
 struct B { }
 static class C : A { }
@@ -13721,7 +13796,7 @@ namespace TestNamespace
         [Fact]
         public void CS1014ERR_GetOrSetExpected()
         {
-            var source = 
+            var source =
 @"partial class C
 {
     public object P { partial get; set; }
@@ -15741,7 +15816,7 @@ namespace N1
    class A { public int Foo() { return 2; }}
 }
 ";
-            var expectedDiagnostics = new[] 
+            var expectedDiagnostics = new[]
             {
                 // (2,1): error CS7021: You cannot declare namespace in script code
                 // namespace N1
@@ -15919,7 +15994,7 @@ namespace x
         [Fact]
         public void CS0108WRN_NewRequired02()
         {
-            var source = 
+            var source =
 @"class A
 {
     public static void P() { }
@@ -17309,8 +17384,9 @@ public class B : A
     Diagnostic(ErrorCode.WRN_ExternCtorNoImplementation, "B").WithArguments("B.B()").WithLocation(8, 17)
                                 );
 
-            Assert.True(verifier.TestData.Methods.Keys.Any(n => n.StartsWith("A..ctor", StringComparison.Ordinal)));
-            Assert.False(verifier.TestData.Methods.Keys.Any(n => n.StartsWith("B..ctor", StringComparison.Ordinal))); // Haven't tried to emit it
+            var methods = verifier.TestData.GetMethodsByName().Keys;
+            Assert.True(methods.Any(n => n.StartsWith("A..ctor", StringComparison.Ordinal)));
+            Assert.False(methods.Any(n => n.StartsWith("B..ctor", StringComparison.Ordinal))); // Haven't tried to emit it
         }
 
         [WorkItem(1084682, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/1084682"), WorkItem(1036359, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/1036359"), WorkItem(386, "CodePlex")]

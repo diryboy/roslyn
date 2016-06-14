@@ -90,15 +90,15 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Emit
             Return False
         End Function
 
-        Private ReadOnly Property IAssemblyFlags As UInteger Implements Cci.IAssembly.Flags
+        Private ReadOnly Property IAssemblyFlags As AssemblyFlags Implements Cci.IAssembly.Flags
             Get
-                Dim result As System.Reflection.AssemblyNameFlags = m_SourceAssembly.Flags And Not System.Reflection.AssemblyNameFlags.PublicKey
+                Dim result As AssemblyFlags = m_SourceAssembly.Flags And Not AssemblyFlags.PublicKey
 
                 If Not m_SourceAssembly.PublicKey.IsDefaultOrEmpty Then
-                    result = result Or System.Reflection.AssemblyNameFlags.PublicKey
+                    result = result Or AssemblyFlags.PublicKey
                 End If
 
-                Return CUInt(result)
+                Return result
             End Get
         End Property
 
@@ -135,39 +135,17 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Emit
             Next
         End Sub
 
-        Private ReadOnly Property IAssemblyReferenceCulture As String Implements Cci.IAssemblyReference.Culture
+        Private ReadOnly Property Identity As AssemblyIdentity Implements Cci.IAssemblyReference.Identity
             Get
-                Return m_SourceAssembly.Identity.CultureName
+                Return m_SourceAssembly.Identity
             End Get
         End Property
 
-        Private ReadOnly Property IAssemblyReferenceIsRetargetable As Boolean Implements Cci.IAssemblyReference.IsRetargetable
+        Private ReadOnly Property AssemblyVersionPattern As Version Implements Cci.IAssemblyReference.AssemblyVersionPattern
             Get
-                Return m_SourceAssembly.Identity.IsRetargetable
+                Return m_SourceAssembly.AssemblyVersionPattern
             End Get
         End Property
-
-        Private ReadOnly Property IAssemblyReferenceContentType As AssemblyContentType Implements Cci.IAssemblyReference.ContentType
-            Get
-                Return m_SourceAssembly.Identity.ContentType
-            End Get
-        End Property
-
-        Private ReadOnly Property IAssemblyReferencePublicKeyToken As ImmutableArray(Of Byte) Implements Cci.IAssemblyReference.PublicKeyToken
-            Get
-                Return m_SourceAssembly.Identity.PublicKeyToken
-            End Get
-        End Property
-
-        Private ReadOnly Property IAssemblyReferenceVersion As Version Implements Cci.IAssemblyReference.Version
-            Get
-                Return m_SourceAssembly.Identity.Version
-            End Get
-        End Property
-
-        Private Function IAssemblyReferenceGetDisplayName() As String Implements Cci.IAssemblyReference.GetDisplayName
-            Return m_SourceAssembly.Identity.GetDisplayName()
-        End Function
 
         Friend Overrides ReadOnly Property Name As String
             Get

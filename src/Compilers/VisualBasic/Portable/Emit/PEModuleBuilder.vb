@@ -4,7 +4,6 @@ Imports System.Collections.Concurrent
 Imports System.Collections.Immutable
 Imports System.Reflection.PortableExecutable
 Imports System.Runtime.InteropServices
-Imports System.Threading
 Imports Microsoft.CodeAnalysis.CodeGen
 Imports Microsoft.CodeAnalysis.Emit
 Imports Microsoft.CodeAnalysis.VisualBasic.Symbols
@@ -24,11 +23,6 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Emit
         Private _lazyExportedTypes As ImmutableArray(Of NamedTypeSymbol)
         Private _lazyTranslatedImports As ImmutableArray(Of Cci.UsedNamespaceOrType)
         Private _lazyDefaultNamespace As String
-
-        ' These fields will only be set when running tests.  They allow realized IL for a given method to be looked up by method display name.
-        Private _testData As ConcurrentDictionary(Of String, CompilationTestData.MethodData)
-        Private _testDataKeyFormat As SymbolDisplayFormat
-        Private _testDataOperatorKeyFormat As SymbolDisplayFormat
 
         Friend Sub New(sourceModule As SourceModuleSymbol,
                        emitOptions As EmitOptions,
@@ -139,10 +133,10 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Emit
 
         Private Sub ValidateReferencedAssembly(assembly As AssemblySymbol, asmRef As AssemblyReference, diagnostics As DiagnosticBag)
             Dim asmIdentity As AssemblyIdentity = SourceModule.ContainingAssembly.Identity
-            Dim refIdentity As AssemblyIdentity = asmRef.MetadataIdentity
+            Dim refIdentity As AssemblyIdentity = asmRef.Identity
 
             If asmIdentity.IsStrongName AndAlso Not refIdentity.IsStrongName AndAlso
-               DirectCast(asmRef, Cci.IAssemblyReference).ContentType <> Reflection.AssemblyContentType.WindowsRuntime Then
+               asmRef.Identity.ContentType <> Reflection.AssemblyContentType.WindowsRuntime Then
                 ' Dev12 reported error, we have changed it to a warning to allow referencing libraries 
                 ' built for platforms that don't support strong names.
                 diagnostics.Add(ErrorFactory.ErrorInfo(ERRID.WRN_ReferencedAssemblyDoesNotHaveStrongName, assembly), NoLocation.Singleton)
@@ -165,7 +159,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Emit
                Not (refMachine = Machine.I386 AndAlso Not assembly.Bit32Required) Then
                 Dim machine = SourceModule.Machine
 
-                If Not (machine = machine.I386 AndAlso Not SourceModule.Bit32Required) AndAlso
+                If Not (machine = Machine.I386 AndAlso Not SourceModule.Bit32Required) AndAlso
                     machine <> refMachine Then
                     ' Different machine types, and neither is agnostic
                     diagnostics.Add(ErrorFactory.ErrorInfo(ERRID.WRN_ConflictingMachineAssembly, assembly), NoLocation.Singleton)
@@ -316,7 +310,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Emit
             End Get
         End Property
 
-        Friend Overridable Function TryCreateVariableSlotAllocator(method As MethodSymbol, topLevelMethod As MethodSymbol) As VariableSlotAllocator
+        Friend Overridable Function TryCreateVariableSlotAllocator(method As MethodSymbol, topLevelMethod As MethodSymbol, diagnostics As DiagnosticBag) As VariableSlotAllocator
             Return Nothing
         End Function
 
@@ -431,8 +425,9 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Emit
                                     context.Diagnostics.Add(New VBDiagnostic(ErrorFactory.ErrorInfo(ERRID.ERR_ExportedTypeConflictsWithDeclaration, exportedType, exportedType.ContainingModule),
                                             NoLocation.Singleton))
                                 Else
-                                    context.Diagnostics.Add(New VBDiagnostic(ErrorFactory.ErrorInfo(ERRID.ERR_ForwardedTypeConflictsWithDeclaration, exportedType),
-                                            NoLocation.Singleton))
+                                    context.Diagnostics.Add(New VBDiagnostic(
+                                        ErrorFactory.ErrorInfo(ERRID.ERR_ForwardedTypeConflictsWithDeclaration,
+                                                               CustomSymbolDisplayFormatter.DefaultErrorFormat(exportedType)), NoLocation.Singleton))
                                 End If
 
                                 Continue For
@@ -447,23 +442,32 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Emit
                                     ' all exported types precede forwarded types, therefore contender cannot be a forwarded type.
                                     Debug.Assert(contender.ContainingAssembly Is sourceAssembly)
 
-                                    context.Diagnostics.Add(New VBDiagnostic(ErrorFactory.ErrorInfo(ERRID.ERR_ExportedTypesConflict,
-                                                                                                exportedType, exportedType.ContainingModule,
-                                                                                                contender, contender.ContainingModule),
-                                        NoLocation.Singleton))
+                                    context.Diagnostics.Add(New VBDiagnostic(ErrorFactory.ErrorInfo(
+                                                                                ERRID.ERR_ExportedTypesConflict,
+                                                                                CustomSymbolDisplayFormatter.DefaultErrorFormat(exportedType),
+                                                                                CustomSymbolDisplayFormatter.DefaultErrorFormat(exportedType.ContainingModule),
+                                                                                CustomSymbolDisplayFormatter.DefaultErrorFormat(contender),
+                                                                                CustomSymbolDisplayFormatter.DefaultErrorFormat(contender.ContainingModule)),
+                                                                             NoLocation.Singleton))
                                 Else
                                     If contender.ContainingAssembly Is sourceAssembly Then
                                         ' Forwarded type conflicts with exported type
-                                        context.Diagnostics.Add(New VBDiagnostic(ErrorFactory.ErrorInfo(ERRID.ERR_ForwardedTypeConflictsWithExportedType,
-                                                                                                    exportedType, exportedType.ContainingAssembly,
-                                                                                                    contender, contender.ContainingModule),
-                                            NoLocation.Singleton))
+                                        context.Diagnostics.Add(New VBDiagnostic(ErrorFactory.ErrorInfo(
+                                                                                    ERRID.ERR_ForwardedTypeConflictsWithExportedType,
+                                                                                    CustomSymbolDisplayFormatter.DefaultErrorFormat(exportedType),
+                                                                                    exportedType.ContainingAssembly,
+                                                                                    CustomSymbolDisplayFormatter.DefaultErrorFormat(contender),
+                                                                                    CustomSymbolDisplayFormatter.DefaultErrorFormat(contender.ContainingModule)),
+                                                                                 NoLocation.Singleton))
                                     Else
                                         ' Forwarded type conflicts with another forwarded type
-                                        context.Diagnostics.Add(New VBDiagnostic(ErrorFactory.ErrorInfo(ERRID.ERR_ForwardedTypesConflict,
-                                                                                                    exportedType, exportedType.ContainingAssembly,
-                                                                                                    contender, contender.ContainingAssembly),
-                                            NoLocation.Singleton))
+                                        context.Diagnostics.Add(New VBDiagnostic(ErrorFactory.ErrorInfo(
+                                                                                    ERRID.ERR_ForwardedTypesConflict,
+                                                                                    CustomSymbolDisplayFormatter.DefaultErrorFormat(exportedType),
+                                                                                    exportedType.ContainingAssembly,
+                                                                                    CustomSymbolDisplayFormatter.DefaultErrorFormat(contender),
+                                                                                    contender.ContainingAssembly),
+                                                                                 NoLocation.Singleton))
                                     End If
                                 End If
 
@@ -622,68 +626,6 @@ Namespace Microsoft.CodeAnalysis.VisualBasic.Emit
             Debug.Assert(methodSymbol.ContainingModule Is Me.SourceModule AndAlso methodSymbol Is methodSymbol.OriginalDefinition)
             Return _disableJITOptimization.ContainsKey(methodSymbol)
         End Function
-
-#Region "Test Hooks"
-
-        Friend ReadOnly Property SaveTestData() As Boolean
-            Get
-                Return _testData IsNot Nothing
-            End Get
-        End Property
-
-        Friend Sub SetMethodTestData(methodSymbol As MethodSymbol, builder As ILBuilder)
-            If _testData Is Nothing Then
-                Throw New InvalidOperationException("Must call SetILBuilderMap before calling SetILBuilder")
-            End If
-
-            ' If this ever throws "ArgumentException: An item with the same key has already been added.", then
-            ' the ilBuilderMapKeyFormat will need to be updated to provide a unique key (see SetILBuilderMap).
-            _testData.Add(
-                methodSymbol.ToDisplayString(If(methodSymbol.IsUserDefinedOperator(), _testDataOperatorKeyFormat, _testDataKeyFormat)),
-                New CompilationTestData.MethodData(builder, methodSymbol))
-        End Sub
-
-        Friend Sub SetMethodTestData(methods As ConcurrentDictionary(Of String, CompilationTestData.MethodData))
-            Me._testData = methods
-            Me._testDataKeyFormat = New SymbolDisplayFormat(
-                compilerInternalOptions:=SymbolDisplayCompilerInternalOptions.UseMetadataMethodNames Or SymbolDisplayCompilerInternalOptions.IncludeCustomModifiers,
-                globalNamespaceStyle:=SymbolDisplayGlobalNamespaceStyle.OmittedAsContaining,
-                typeQualificationStyle:=SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
-                genericsOptions:=SymbolDisplayGenericsOptions.IncludeTypeParameters Or SymbolDisplayGenericsOptions.IncludeVariance,
-                memberOptions:=
-                    SymbolDisplayMemberOptions.IncludeParameters Or
-                    SymbolDisplayMemberOptions.IncludeContainingType Or
-                    SymbolDisplayMemberOptions.IncludeExplicitInterface,
-                parameterOptions:=
-                    SymbolDisplayParameterOptions.IncludeParamsRefOut Or
-                    SymbolDisplayParameterOptions.IncludeExtensionThis Or
-                    SymbolDisplayParameterOptions.IncludeType,
-                miscellaneousOptions:=
-                    SymbolDisplayMiscellaneousOptions.EscapeKeywordIdentifiers Or
-                    SymbolDisplayMiscellaneousOptions.UseSpecialTypes Or
-                    SymbolDisplayMiscellaneousOptions.UseAsterisksInMultiDimensionalArrays Or
-                    SymbolDisplayMiscellaneousOptions.UseErrorTypeSymbolName)
-            ' most methods don't need return type to disambiguate signatures, however,
-            ' it is necessary to disambiguate user defined operators:
-            '   Operator op_Implicit(Type) As Integer
-            '   Operator op_Implicit(Type) As Single
-            '   ... etc ...
-            Me._testDataOperatorKeyFormat = New SymbolDisplayFormat(
-                _testDataKeyFormat.CompilerInternalOptions,
-                _testDataKeyFormat.GlobalNamespaceStyle,
-                _testDataKeyFormat.TypeQualificationStyle,
-                _testDataKeyFormat.GenericsOptions,
-                _testDataKeyFormat.MemberOptions Or SymbolDisplayMemberOptions.IncludeType,
-                _testDataKeyFormat.ParameterOptions,
-                _testDataKeyFormat.DelegateStyle,
-                _testDataKeyFormat.ExtensionMethodStyle,
-                _testDataKeyFormat.PropertyStyle,
-                _testDataKeyFormat.LocalOptions,
-                _testDataKeyFormat.KindOptions,
-                _testDataKeyFormat.MiscellaneousOptions)
-        End Sub
-
-#End Region
 
     End Class
 End Namespace

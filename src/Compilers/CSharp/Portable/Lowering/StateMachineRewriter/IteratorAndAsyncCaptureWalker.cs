@@ -47,7 +47,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         // Returns deterministically ordered list of variables that ought to be hoisted.
         public static OrderedSet<Symbol> Analyze(CSharpCompilation compilation, MethodSymbol method, BoundNode node, DiagnosticBag diagnostics)
         {
-            var initiallyAssignedVariables = UnassignedVariablesWalker.Analyze(compilation, method, node, convertInsufficientExecutionStackExceptionToCancelledByStackGuardException:true);
+            var initiallyAssignedVariables = UnassignedVariablesWalker.Analyze(compilation, method, node, convertInsufficientExecutionStackExceptionToCancelledByStackGuardException: true);
             var walker = new IteratorAndAsyncCaptureWalker(compilation, method, node, new NeverEmptyStructTypeCache(), initiallyAssignedVariables);
 
             walker._convertInsufficientExecutionStackExceptionToCancelledByStackGuardException = true;
@@ -338,7 +338,7 @@ namespace Microsoft.CodeAnalysis.CSharp
 
             public override BoundNode VisitCatchBlock(BoundCatchBlock node)
             {
-                AddVariable(node.LocalOpt);
+                AddVariables(node.Locals);
                 return base.VisitCatchBlock(node);
             }
 

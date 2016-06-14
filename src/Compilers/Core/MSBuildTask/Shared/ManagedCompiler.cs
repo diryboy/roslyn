@@ -60,6 +60,12 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         // We do not support BugReport because it always requires user interaction,
         // which will cause a hang.
 
+        public string ChecksumAlgorithm
+        {
+            set { _store[nameof(ChecksumAlgorithm)] = value; }
+            get { return (string)_store[nameof(ChecksumAlgorithm)]; }
+        }
+
         public string CodeAnalysisRuleSet
         {
             set { _store[nameof(CodeAnalysisRuleSet)] = value; }
@@ -228,6 +234,12 @@ namespace Microsoft.CodeAnalysis.BuildTasks
         {
             set { _store[nameof(Resources)] = value; }
             get { return (ITaskItem[])_store[nameof(Resources)]; }
+        }
+
+        public string RuntimeMetadataVersion
+        {
+            set { _store[nameof(RuntimeMetadataVersion)] = value; }
+            get { return (string)_store[nameof(RuntimeMetadataVersion)]; }
         }
 
         public ITaskItem[] ResponseFiles
@@ -665,8 +677,6 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             commandLine.AppendWhenTrue("/nologo", _store, nameof(NoLogo));
             commandLine.AppendWhenTrue("/nowin32manifest", _store, nameof(NoWin32Manifest));
             commandLine.AppendPlusOrMinusSwitch("/optimize", _store, nameof(Optimize));
-            commandLine.AppendPlusOrMinusSwitch("/deterministic", _store, nameof(Deterministic));
-            commandLine.AppendPlusOrMinusSwitch("/publicsign", _store, nameof(PublicSign));
             commandLine.AppendSwitchIfNotNull("/pathmap:", PathMap);
             commandLine.AppendSwitchIfNotNull("/out:", OutputAssembly);
             commandLine.AppendSwitchIfNotNull("/ruleset:", CodeAnalysisRuleSet);
@@ -681,12 +691,22 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             commandLine.AppendSwitchIfNotNull("/win32icon:", Win32Icon);
             commandLine.AppendSwitchIfNotNull("/win32manifest:", Win32Manifest);
 
-            AddFeatures(commandLine, Features);
+            AddResponseFileCommandsForSwitchesSinceInitialReleaseThatAreNeededByTheHost(commandLine);
             AddAnalyzersToCommandLine(commandLine, Analyzers);
             AddAdditionalFilesToCommandLine(commandLine);
 
             // Append the sources.
             commandLine.AppendFileNamesIfNotNull(Sources, " ");
+        }
+
+        internal void AddResponseFileCommandsForSwitchesSinceInitialReleaseThatAreNeededByTheHost(CommandLineBuilderExtension commandLine)
+        {
+            commandLine.AppendPlusOrMinusSwitch("/deterministic", _store, nameof(Deterministic));
+            commandLine.AppendPlusOrMinusSwitch("/publicsign", _store, nameof(PublicSign));
+            commandLine.AppendSwitchIfNotNull("/runtimemetadataversion:", RuntimeMetadataVersion);
+            commandLine.AppendSwitchIfNotNull("/checksumalgorithm:", ChecksumAlgorithm);
+
+            AddFeatures(commandLine, Features);
         }
 
         /// <summary>
@@ -919,6 +939,19 @@ namespace Microsoft.CodeAnalysis.BuildTasks
             {
                 Log.LogMessageFromResources(MessageImportance.Normal, "General_ParameterUnsupportedOnHostCompiler", parameterName);
                 _hostCompilerSupportsAllParameters = false;
+            }
+        }
+
+        internal void InitializeHostObjectSupportForNewSwitches(ITaskHost hostObject, ref string param)
+        {
+            var compilerOptionsHostObject = hostObject as ICompilerOptionsHostObject;
+
+            if (compilerOptionsHostObject != null)
+            {
+                var commandLineBuilder = new CommandLineBuilderExtension();
+                AddResponseFileCommandsForSwitchesSinceInitialReleaseThatAreNeededByTheHost(commandLineBuilder);
+                param = "CompilerOptions";
+                CheckHostObjectSupport(param, compilerOptionsHostObject.SetCompilerOptions(commandLineBuilder.ToString()));
             }
         }
 

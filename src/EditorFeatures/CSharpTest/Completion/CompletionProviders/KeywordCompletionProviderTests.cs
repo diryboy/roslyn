@@ -16,7 +16,7 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.UnitTests.IntelliSense.Completion
         {
         }
 
-        internal override CompletionListProvider CreateCompletionProvider()
+        internal override CompletionProvider CreateCompletionProvider()
         {
             return new KeywordCompletionProvider();
         }
@@ -36,8 +36,9 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.UnitTests.IntelliSense.Completion
         [Fact, Trait(Traits.Feature, Traits.Features.KeywordRecommending)]
         public async Task SendEnterThroughToEditorTest()
         {
-            await VerifySendEnterThroughToEnterAsync("$$", "class", sendThroughEnterEnabled: false, expected: false);
-            await VerifySendEnterThroughToEnterAsync("$$", "class", sendThroughEnterEnabled: true, expected: true);
+            await VerifySendEnterThroughToEnterAsync("$$", "class", sendThroughEnterOption: EnterKeyRule.Never, expected: false);
+            await VerifySendEnterThroughToEnterAsync("$$", "class", sendThroughEnterOption: EnterKeyRule.AfterFullyTypedWord, expected: true);
+            await VerifySendEnterThroughToEnterAsync("$$", "class", sendThroughEnterOption: EnterKeyRule.Always, expected: true);
         }
 
         [Fact, Trait(Traits.Feature, Traits.Features.KeywordRecommending)]
@@ -258,6 +259,63 @@ $$
 </Workspace>";
             await VerifyItemInLinkedFilesAsync(markup, "public", null);
             await VerifyItemInLinkedFilesAsync(markup, "for", null);
+        }
+
+        [WorkItem(7768, "https://github.com/dotnet/roslyn/issues/7768")]
+        [WorkItem(8228, "https://github.com/dotnet/roslyn/issues/8228")]
+        [WpfFact, Trait(Traits.Feature, Traits.Features.Completion)]
+        public async Task FormattingAfterCompletionCommit_AfterGetAccessorInSingleLineIncompleteProperty()
+        {
+            var markupBeforeCommit = @"class Program
+{
+    int P {g$$
+    void Main() { }
+}";
+
+            var expectedCodeAfterCommit = @"class Program
+{
+    int P {get;
+    void Main() { }
+}";
+            await VerifyProviderCommitAsync(markupBeforeCommit, "get", expectedCodeAfterCommit, commitChar: ';', textTypedSoFar: "g");
+        }
+
+        [WorkItem(7768, "https://github.com/dotnet/roslyn/issues/7768")]
+        [WorkItem(8228, "https://github.com/dotnet/roslyn/issues/8228")]
+        [WpfFact, Trait(Traits.Feature, Traits.Features.Completion)]
+        public async Task FormattingAfterCompletionCommit_AfterBothAccessorsInSingleLineIncompleteProperty()
+        {
+            var markupBeforeCommit = @"class Program
+{
+    int P {get;set$$
+    void Main() { }
+}";
+
+            var expectedCodeAfterCommit = @"class Program
+{
+    int P {get;set;
+    void Main() { }
+}";
+            await VerifyProviderCommitAsync(markupBeforeCommit, "set", expectedCodeAfterCommit, commitChar: ';', textTypedSoFar: "set");
+        }
+
+        [WorkItem(7768, "https://github.com/dotnet/roslyn/issues/7768")]
+        [WorkItem(8228, "https://github.com/dotnet/roslyn/issues/8228")]
+        [WpfFact, Trait(Traits.Feature, Traits.Features.Completion)]
+        public async Task FormattingAfterCompletionCommit_InSingleLineMethod()
+        {
+            var markupBeforeCommit = @"class Program
+{
+    public static void Test() { return$$
+    void Main() { }
+}";
+
+            var expectedCodeAfterCommit = @"class Program
+{
+    public static void Test() { return;
+    void Main() { }
+}";
+            await VerifyProviderCommitAsync(markupBeforeCommit, "return", expectedCodeAfterCommit, commitChar: ';', textTypedSoFar: "return");
         }
     }
 }

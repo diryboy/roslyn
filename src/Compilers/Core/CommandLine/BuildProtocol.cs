@@ -442,7 +442,7 @@ namespace Microsoft.CodeAnalysis.CommandLine
 
     internal sealed class MismatchedVersionBuildResponse : BuildResponse
     {
-        public override ResponseType Type => ResponseType.MismatchedVersion; 
+        public override ResponseType Type => ResponseType.MismatchedVersion;
 
         /// <summary>
         /// MismatchedVersion has no body.
@@ -558,16 +558,6 @@ namespace Microsoft.CodeAnalysis.CommandLine
                 totalBytesRead += bytesRead;
             } while (totalBytesRead < count);
             Log("Finished read");
-        }
-
-        public static string GetServerMutexName(string pipeName)
-        {
-            return $"{pipeName}.server";
-        }
-
-        public static string GetClientMutexName(string pipeName)
-        {
-            return $"{pipeName}.client";
         }
     }
 }

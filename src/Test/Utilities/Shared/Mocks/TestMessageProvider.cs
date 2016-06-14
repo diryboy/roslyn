@@ -134,6 +134,11 @@ namespace Roslyn.Test.Utilities
             get { throw new NotImplementedException(); }
         }
 
+        public override int ERR_OptionMustBeAbsolutePath
+        {
+            get { throw new NotImplementedException(); }
+        }
+
         public override int ERR_CantReadResource
         {
             get { throw new NotImplementedException(); }
@@ -348,6 +353,46 @@ namespace Roslyn.Test.Utilities
         }
 
         public override int ERR_BadCompilationOptionValue
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public override int ERR_MutuallyExclusiveOptions
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public override int ERR_TooManyUserStrings
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+        
+        public override int ERR_PeWritingFailure
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+        
+        public override int ERR_ModuleEmitFailure
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public override int ERR_EncUpdateFailedMissingAttribute
         {
             get
             {

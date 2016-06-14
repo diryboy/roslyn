@@ -5259,7 +5259,7 @@ class C
         public void TestSemicolonAfterUntypedLambdaParameter()
         {
             var text = "class c { void m() { var x = (y, ; } }";
-            var file = this.ParseTree(text);
+            var file = this.ParseTree(text, options: TestOptions.Regular.WithTuplesFeature());
 
             Assert.NotNull(file);
             Assert.Equal(text, file.ToFullString());
@@ -5277,12 +5277,41 @@ class C
             Assert.NotNull(ds.Declaration.Variables[0].Initializer);
             Assert.NotEqual(SyntaxKind.None, ds.Declaration.Variables[0].Initializer.EqualsToken.Kind());
             Assert.NotNull(ds.Declaration.Variables[0].Initializer.Value);
-            Assert.Equal(SyntaxKind.ParenthesizedLambdaExpression, ds.Declaration.Variables[0].Initializer.Value.Kind());
-            Assert.Equal(4, file.Errors().Length);
-            Assert.Equal((int)ErrorCode.ERR_IdentifierExpected, file.Errors()[0].Code);
+            Assert.Equal(SyntaxKind.TupleExpression, ds.Declaration.Variables[0].Initializer.Value.Kind());
+            Assert.Equal(2, file.Errors().Length);
+            Assert.Equal((int)ErrorCode.ERR_InvalidExprTerm, file.Errors()[0].Code);
             Assert.Equal((int)ErrorCode.ERR_CloseParenExpected, file.Errors()[1].Code);
-            Assert.Equal((int)ErrorCode.ERR_SyntaxError, file.Errors()[2].Code);
-            Assert.Equal((int)ErrorCode.ERR_InvalidExprTerm, file.Errors()[3].Code);
+        }
+
+        [Fact]
+        public void TestSemicolonAfterUntypedLambdaParameterWithCSharp6()
+        {
+            var text = "class c { void m() { var x = (y, ; } }";
+            var file = this.ParseTree(text, TestOptions.Regular.WithLanguageVersion(LanguageVersion.CSharp6));
+
+            Assert.NotNull(file);
+            Assert.Equal(text, file.ToFullString());
+            Assert.Equal(1, file.Members.Count);
+            Assert.Equal(SyntaxKind.ClassDeclaration, file.Members[0].Kind());
+            var agg = (TypeDeclarationSyntax)file.Members[0];
+            Assert.Equal(1, agg.Members.Count);
+            Assert.Equal(SyntaxKind.MethodDeclaration, agg.Members[0].Kind());
+            var ms = (MethodDeclarationSyntax)agg.Members[0];
+            Assert.NotNull(ms.Body);
+            Assert.Equal(1, ms.Body.Statements.Count);
+            Assert.Equal(SyntaxKind.LocalDeclarationStatement, ms.Body.Statements[0].Kind());
+            var ds = (LocalDeclarationStatementSyntax)ms.Body.Statements[0];
+            Assert.Equal(1, ds.Declaration.Variables.Count);
+            Assert.NotNull(ds.Declaration.Variables[0].Initializer);
+            Assert.NotEqual(SyntaxKind.None, ds.Declaration.Variables[0].Initializer.EqualsToken.Kind());
+            Assert.NotNull(ds.Declaration.Variables[0].Initializer.Value);
+            Assert.Equal(SyntaxKind.TupleExpression, ds.Declaration.Variables[0].Initializer.Value.Kind());
+
+            Assert.Equal(new [] {
+                                (int)ErrorCode.ERR_FeatureIsExperimental,
+                                (int)ErrorCode.ERR_InvalidExprTerm,
+                                (int)ErrorCode.ERR_CloseParenExpected
+                            }, file.Errors().Select(e => e.Code));
         }
 
         [Fact]
@@ -5322,7 +5351,7 @@ class C
         public void TestStatementAfterUntypedLambdaParameter()
         {
             var text = "class c { void m() { var x = (y, while (c) { } } }";
-            var file = this.ParseTree(text);
+            var file = this.ParseTree(text, options: TestOptions.Regular.WithTuplesFeature());
 
             Assert.NotNull(file);
             Assert.Equal(text, file.ToFullString());
@@ -5341,13 +5370,46 @@ class C
             Assert.NotNull(ds.Declaration.Variables[0].Initializer);
             Assert.NotEqual(SyntaxKind.None, ds.Declaration.Variables[0].Initializer.EqualsToken.Kind());
             Assert.NotNull(ds.Declaration.Variables[0].Initializer.Value);
-            Assert.Equal(SyntaxKind.ParenthesizedLambdaExpression, ds.Declaration.Variables[0].Initializer.Value.Kind());
-            Assert.Equal(5, file.Errors().Length);
-            Assert.Equal((int)ErrorCode.ERR_IdentifierExpected, file.Errors()[0].Code);
+            Assert.Equal(SyntaxKind.TupleExpression, ds.Declaration.Variables[0].Initializer.Value.Kind());
+            Assert.Equal(3, file.Errors().Length);
+            Assert.Equal((int)ErrorCode.ERR_InvalidExprTerm, file.Errors()[0].Code);
             Assert.Equal((int)ErrorCode.ERR_CloseParenExpected, file.Errors()[1].Code);
-            Assert.Equal((int)ErrorCode.ERR_SyntaxError, file.Errors()[2].Code);
-            Assert.Equal((int)ErrorCode.ERR_InvalidExprTerm, file.Errors()[3].Code);
-            Assert.Equal((int)ErrorCode.ERR_SemicolonExpected, file.Errors()[4].Code);
+            Assert.Equal((int)ErrorCode.ERR_SemicolonExpected, file.Errors()[2].Code);
+        }
+
+        [Fact]
+        public void TestStatementAfterUntypedLambdaParameterWithCSharp6()
+        {
+            var text = "class c { void m() { var x = (y, while (c) { } } }";
+            var file = this.ParseTree(text);
+
+            Assert.NotNull(file);
+            Assert.Equal(text, file.ToFullString());
+            Assert.Equal(1, file.Members.Count);
+            Assert.Equal(SyntaxKind.ClassDeclaration, file.Members[0].Kind());
+            var agg = (TypeDeclarationSyntax)file.Members[0];
+            Assert.Equal(1, agg.Members.Count);
+            Assert.Equal(SyntaxKind.MethodDeclaration, agg.Members[0].Kind());
+            var ms = (MethodDeclarationSyntax)agg.Members[0];
+            Assert.NotNull(ms.Body);
+            Assert.Equal(2, ms.Body.Statements.Count);
+            Assert.Equal(SyntaxKind.LocalDeclarationStatement, ms.Body.Statements[0].Kind());
+            Assert.Equal(SyntaxKind.WhileStatement, ms.Body.Statements[1].Kind());
+
+            var ds = (LocalDeclarationStatementSyntax)ms.Body.Statements[0];
+            Assert.Equal("var x = (y, ", ds.ToFullString());
+            Assert.Equal(1, ds.Declaration.Variables.Count);
+            Assert.NotNull(ds.Declaration.Variables[0].Initializer);
+            Assert.NotEqual(SyntaxKind.None, ds.Declaration.Variables[0].Initializer.EqualsToken.Kind());
+            Assert.NotNull(ds.Declaration.Variables[0].Initializer.Value);
+            Assert.Equal(SyntaxKind.TupleExpression, ds.Declaration.Variables[0].Initializer.Value.Kind());
+
+            Assert.Equal(new [] {
+                                (int)ErrorCode.ERR_FeatureIsExperimental,
+                                (int)ErrorCode.ERR_InvalidExprTerm,
+                                (int)ErrorCode.ERR_CloseParenExpected,
+                                (int)ErrorCode.ERR_SemicolonExpected
+                            }, file.Errors().Select(e => e.Code));
         }
 
         [Fact]
@@ -6337,7 +6399,7 @@ public class Test
         }
 
         [WorkItem(542236, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/542236")]
-        [ClrOnlyFact]
+        [Fact]
         public void InsertOpenBraceBeforeCodes()
         {
             var text = @"{
@@ -6348,7 +6410,7 @@ public class Test
             SyntaxTree syntaxTree = SyntaxFactory.ParseSyntaxTree(text);
             Assert.Equal(text, syntaxTree.GetCompilationUnitRoot().ToFullString());
 
-            Assert.Equal("{\r\n", syntaxTree.GetCompilationUnitRoot().GetLeadingTrivia().Node.ToFullString());
+            Assert.Equal($"{{{Environment.NewLine}", syntaxTree.GetCompilationUnitRoot().GetLeadingTrivia().Node.ToFullString());
 
             // The issue (9391) was exhibited while enumerating the diagnostics
             Assert.True(syntaxTree.GetDiagnostics().Select(d => ((IFormattable)d).ToString(null, EnsureEnglishUICulture.PreferredOrNull)).SequenceEqual(new[]
@@ -6843,7 +6905,7 @@ static
 
 
         [WorkItem(947819, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/947819")]
-        [ClrOnlyFact]
+        [Fact]
         public void MissingOpenBraceForClass()
         {
             var source = @"namespace n
@@ -6854,13 +6916,18 @@ static
             var root = SyntaxFactory.ParseSyntaxTree(source).GetRoot();
 
             Assert.Equal(source, root.ToFullString());
+            // Verify incomplete class decls don't eat tokens of surrounding nodes
             var classDecl = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Single();
-            Assert.Equal(new Text.TextSpan(20, 9), classDecl.Span);
-            Assert.Equal(new Text.TextSpan(16, 13), classDecl.FullSpan);
+            Assert.False(classDecl.Identifier.IsMissing);
+            Assert.True(classDecl.OpenBraceToken.IsMissing);
+            Assert.True(classDecl.CloseBraceToken.IsMissing);
+            var ns = root.DescendantNodes().OfType<NamespaceDeclarationSyntax>().Single();
+            Assert.False(ns.OpenBraceToken.IsMissing);
+            Assert.False(ns.CloseBraceToken.IsMissing);
         }
 
         [WorkItem(947819, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/947819")]
-        [ClrOnlyFact]
+        [Fact]
         public void MissingOpenBraceForStruct()
         {
             var source = @"namespace n
@@ -6871,13 +6938,17 @@ static
             var root = SyntaxFactory.ParseSyntaxTree(source).GetRoot();
 
             Assert.Equal(source, root.ToFullString());
+            // Verify incomplete struct decls don't eat tokens of surrounding nodes
             var structDecl = root.DescendantNodes().OfType<StructDeclarationSyntax>().Single();
-            Assert.Equal(new Text.TextSpan(20, 14), structDecl.Span);
-            Assert.Equal(new Text.TextSpan(16, 18), structDecl.FullSpan);
+            Assert.True(structDecl.OpenBraceToken.IsMissing);
+            Assert.True(structDecl.CloseBraceToken.IsMissing);
+            var ns = root.DescendantNodes().OfType<NamespaceDeclarationSyntax>().Single();
+            Assert.False(ns.OpenBraceToken.IsMissing);
+            Assert.False(ns.CloseBraceToken.IsMissing);
         }
 
         [WorkItem(947819, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/947819")]
-        [ClrOnlyFact]
+        [Fact]
         public void MissingNameForStruct()
         {
             var source = @"namespace n
@@ -6890,13 +6961,18 @@ static
             var root = SyntaxFactory.ParseSyntaxTree(source).GetRoot();
 
             Assert.Equal(source, root.ToFullString());
+            // Verify incomplete struct decls don't eat tokens of surrounding nodes
             var structDecl = root.DescendantNodes().OfType<StructDeclarationSyntax>().Single();
-            Assert.Equal(new Text.TextSpan(20, 24), structDecl.Span);
-            Assert.Equal(new Text.TextSpan(16, 30), structDecl.FullSpan);
+            Assert.True(structDecl.Identifier.IsMissing);
+            Assert.False(structDecl.OpenBraceToken.IsMissing);
+            Assert.False(structDecl.CloseBraceToken.IsMissing);
+            var ns = root.DescendantNodes().OfType<NamespaceDeclarationSyntax>().Single();
+            Assert.False(ns.OpenBraceToken.IsMissing);
+            Assert.False(ns.CloseBraceToken.IsMissing);
         }
 
         [WorkItem(947819, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/947819")]
-        [ClrOnlyFact]
+        [Fact]
         public void MissingNameForClass()
         {
             var source = @"namespace n
@@ -6909,9 +6985,14 @@ static
             var root = SyntaxFactory.ParseSyntaxTree(source).GetRoot();
 
             Assert.Equal(source, root.ToFullString());
+            // Verify incomplete class decls don't eat tokens of surrounding nodes
             var classDecl = root.DescendantNodes().OfType<ClassDeclarationSyntax>().Single();
-            Assert.Equal(new Text.TextSpan(20, 19), classDecl.Span);
-            Assert.Equal(new Text.TextSpan(16, 25), classDecl.FullSpan);
+            Assert.True(classDecl.Identifier.IsMissing);
+            Assert.False(classDecl.OpenBraceToken.IsMissing);
+            Assert.False(classDecl.CloseBraceToken.IsMissing);
+            var ns = root.DescendantNodes().OfType<NamespaceDeclarationSyntax>().Single();
+            Assert.False(ns.OpenBraceToken.IsMissing);
+            Assert.False(ns.CloseBraceToken.IsMissing);
         }
     }
 }

@@ -174,8 +174,7 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.Snippets
                     var document = this.SubjectBuffer.CurrentSnapshot.GetOpenDocumentInCurrentContextWithChanges();
                     if (document != null)
                     {
-                        var optionService = document.Project.Solution.Workspace.Services.GetService<IOptionService>();
-                        var tabSize = optionService.GetOption(FormattingOptions.TabSize, document.Project.Language);
+                        var tabSize = document.Options.GetOption(FormattingOptions.TabSize);
                         indentDepth = lineText.GetColumnFromLineOffset(lineText.Length, tabSize);
                     }
                     else
@@ -352,13 +351,14 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.Snippets
 
         public virtual bool TryHandleReturn()
         {
-            // TODO(davip): Only move the caret if the enter was hit within the editable spans
-
             if (ExpansionSession != null)
             {
-                ExpansionSession.EndCurrentExpansion(fLeaveCaret: 0);
+                // Only move the caret if the enter was hit within the snippet fields.
+                var hitWithinField = VSConstants.S_OK == ExpansionSession.GoToNextExpansionField(fCommitIfLast: 0);
+                ExpansionSession.EndCurrentExpansion(fLeaveCaret: hitWithinField ? 0 : 1);
                 ExpansionSession = null;
-                return true;
+
+                return hitWithinField;
             }
 
             return false;
@@ -524,8 +524,7 @@ namespace Microsoft.VisualStudio.LanguageServices.Implementation.Snippets
                 return;
             }
 
-            var optionService = documentWithImports.Project.Solution.Workspace.Services.GetService<IOptionService>();
-            var placeSystemNamespaceFirst = optionService.GetOption(OrganizerOptions.PlaceSystemNamespaceFirst, documentWithImports.Project.Language);
+            var placeSystemNamespaceFirst = documentWithImports.Options.GetOption(OrganizerOptions.PlaceSystemNamespaceFirst);
             documentWithImports = AddImports(documentWithImports, snippetNode, placeSystemNamespaceFirst, cancellationToken);
             AddReferences(documentWithImports.Project, snippetNode);
         }

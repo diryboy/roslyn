@@ -35,7 +35,7 @@ class C
 }";
             Action<ModuleSymbol> containerValidator = module =>
             {
-                Assert.Null(module.GlobalNamespace.GetMember<NamedTypeSymbol>("<>v"));
+                Assert.Null(module.GlobalNamespace.GetMember<NamedTypeSymbol>("<>x"));
             };
             var compilation = CompileAndVerify(source, symbolValidator: containerValidator, expectedOutput: PASS);
         }
@@ -59,7 +59,7 @@ class C
 }";
             Action<ModuleSymbol> containerValidator = module =>
             {
-                Assert.Null(module.GlobalNamespace.GetMember<NamedTypeSymbol>("<>v"));
+                Assert.Null(module.GlobalNamespace.GetMember<NamedTypeSymbol>("<>x"));
             };
             var compilation = CompileAndVerify(source, symbolValidator: containerValidator, expectedOutput: PASS);
         }
@@ -87,7 +87,7 @@ static class E
 ";
             Action<ModuleSymbol> containerValidator = module =>
             {
-                Assert.Null(module.GlobalNamespace.GetMember<NamedTypeSymbol>("<>v"));
+                Assert.Null(module.GlobalNamespace.GetMember<NamedTypeSymbol>("<>x"));
             };
             var compilation = CompileAndVerify(source, symbolValidator: containerValidator, expectedOutput: PASS, additionalRefs: s_SystemCoreRef);
         }
@@ -115,7 +115,7 @@ static class E
 ";
             Action<ModuleSymbol> containerValidator = module =>
             {
-                Assert.Null(module.GlobalNamespace.GetMember<NamedTypeSymbol>("<>v"));
+                Assert.Null(module.GlobalNamespace.GetMember<NamedTypeSymbol>("<>x"));
             };
             var compilation = CompileAndVerify(source, symbolValidator: containerValidator, expectedOutput: PASS, additionalRefs: s_SystemCoreRef);
         }
@@ -138,7 +138,7 @@ class C
 ";
             Action<ModuleSymbol> containerValidator = module =>
             {
-                Assert.Null(module.GlobalNamespace.GetMember<NamedTypeSymbol>("<>v"));
+                Assert.Null(module.GlobalNamespace.GetMember<NamedTypeSymbol>("<>x"));
             };
             var compilation = CompileAndVerify(source, symbolValidator: containerValidator, additionalRefs: s_SystemCoreRef);
         }
@@ -161,7 +161,7 @@ class C
 ";
             Action<ModuleSymbol> containerValidator = module =>
             {
-                Assert.Null(module.GlobalNamespace.GetMember<NamedTypeSymbol>("<>v"));
+                Assert.Null(module.GlobalNamespace.GetMember<NamedTypeSymbol>("<>x"));
             };
             var compilation = CompileAndVerify(source, symbolValidator: containerValidator, additionalRefs: s_SystemCoreRef);
         }
@@ -179,7 +179,7 @@ class C
 ";
             Action<ModuleSymbol> containerValidator = module =>
             {
-                Assert.Null(module.GlobalNamespace.GetMember<NamedTypeSymbol>("<>v"));
+                Assert.Null(module.GlobalNamespace.GetMember<NamedTypeSymbol>("<>x"));
             };
             var compilation = CompileAndVerify(source, symbolValidator: containerValidator);
         }
@@ -202,7 +202,7 @@ struct C
 ";
             Action<ModuleSymbol> containerValidator = module =>
             {
-                Assert.Null(module.GlobalNamespace.GetMember<NamedTypeSymbol>("<>v"));
+                Assert.Null(module.GlobalNamespace.GetMember<NamedTypeSymbol>("<>x"));
             };
             var compilation = CompileAndVerify(source, symbolValidator: containerValidator);
         }
@@ -233,7 +233,7 @@ class C
 {
   // Code size       33 (0x21)
   .maxstack  2
-  IL_0000:  ldsfld     ""System.Action <>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Action <>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -241,7 +241,7 @@ class C
   IL_000a:  ldftn      ""void C.Target()""
   IL_0010:  newobj     ""System.Action..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""System.Action <>v.<Target>w""
+  IL_0016:  stsfld     ""System.Action <>x.<Target>w""
   IL_001b:  call       ""void C.Test(System.Action)""
   IL_0020:  ret
 }
@@ -275,7 +275,7 @@ class D<T>
 {
   // Code size       28 (0x1c)
   .maxstack  2
-  IL_0000:  ldsfld     ""System.Action <>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Action <>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -283,7 +283,7 @@ class D<T>
   IL_000a:  ldftn      ""void C.Target()""
   IL_0010:  newobj     ""System.Action..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""System.Action <>v.<Target>w""
+  IL_0016:  stsfld     ""System.Action <>x.<Target>w""
   IL_001b:  ret
 }
 ");
@@ -318,7 +318,7 @@ class E<V>
 {
   // Code size       33 (0x21)
   .maxstack  2
-  IL_0000:  ldsfld     ""System.Action <>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Action <>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -326,7 +326,7 @@ class E<V>
   IL_000a:  ldftn      ""void E<int>.Target()""
   IL_0010:  newobj     ""System.Action..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""System.Action <>v.<Target>w""
+  IL_0016:  stsfld     ""System.Action <>x.<Target>w""
   IL_001b:  callvirt   ""void System.Action.Invoke()""
   IL_0020:  ret
 }
@@ -362,7 +362,7 @@ class E<V>
 {
   // Code size       34 (0x22)
   .maxstack  2
-  IL_0000:  ldsfld     ""System.Action<int> <>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Action<int> <>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -370,7 +370,7 @@ class E<V>
   IL_000a:  ldftn      ""void E<int>.Target(int)""
   IL_0010:  newobj     ""System.Action<int>..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""System.Action<int> <>v.<Target>w""
+  IL_0016:  stsfld     ""System.Action<int> <>x.<Target>w""
   IL_001b:  ldc.i4.0
   IL_001c:  callvirt   ""void System.Action<int>.Invoke(int)""
   IL_0021:  ret
@@ -407,7 +407,7 @@ class E<V>
 {
   // Code size       34 (0x22)
   .maxstack  2
-  IL_0000:  ldsfld     ""System.Action<int> <>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Action<int> <>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -415,7 +415,7 @@ class E<V>
   IL_000a:  ldftn      ""void E<int>.Target<double>(int)""
   IL_0010:  newobj     ""System.Action<int>..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""System.Action<int> <>v.<Target>w""
+  IL_0016:  stsfld     ""System.Action<int> <>x.<Target>w""
   IL_001b:  ldc.i4.0
   IL_001c:  callvirt   ""void System.Action<int>.Invoke(int)""
   IL_0021:  ret
@@ -452,7 +452,7 @@ class E<V>
 {
   // Code size       35 (0x23)
   .maxstack  2
-  IL_0000:  ldsfld     ""System.Func<int, int> <>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Func<int, int> <>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -460,7 +460,7 @@ class E<V>
   IL_000a:  ldftn      ""int E<int>.Target<double>(int)""
   IL_0010:  newobj     ""System.Func<int, int>..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""System.Func<int, int> <>v.<Target>w""
+  IL_0016:  stsfld     ""System.Func<int, int> <>x.<Target>w""
   IL_001b:  ldc.i4.0
   IL_001c:  callvirt   ""int System.Func<int, int>.Invoke(int)""
   IL_0021:  pop
@@ -496,7 +496,7 @@ class D<T>
 {
   // Code size       33 (0x21)
   .maxstack  2
-  IL_0000:  ldsfld     ""System.Action D<T>.<>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Action D<T>.<>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -504,7 +504,7 @@ class D<T>
   IL_000a:  ldftn      ""void D<T>.Target()""
   IL_0010:  newobj     ""System.Action..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""System.Action D<T>.<>v.<Target>w""
+  IL_0016:  stsfld     ""System.Action D<T>.<>x.<Target>w""
   IL_001b:  callvirt   ""void System.Action.Invoke()""
   IL_0020:  ret
 }
@@ -538,7 +538,7 @@ class D<T>
 {
   // Code size       33 (0x21)
   .maxstack  2
-  IL_0000:  ldsfld     ""System.Action D<T>.<>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Action D<T>.<>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -546,7 +546,7 @@ class D<T>
   IL_000a:  ldftn      ""void D<T>.Target<int>()""
   IL_0010:  newobj     ""System.Action..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""System.Action D<T>.<>v.<Target>w""
+  IL_0016:  stsfld     ""System.Action D<T>.<>x.<Target>w""
   IL_001b:  callvirt   ""void System.Action.Invoke()""
   IL_0020:  ret
 }
@@ -580,7 +580,7 @@ class D<T>
 {
   // Code size       33 (0x21)
   .maxstack  2
-  IL_0000:  ldsfld     ""System.Action D<T>.<>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Action D<T>.<>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -588,7 +588,7 @@ class D<T>
   IL_000a:  ldftn      ""void D<T>.Target<T>()""
   IL_0010:  newobj     ""System.Action..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""System.Action D<T>.<>v.<Target>w""
+  IL_0016:  stsfld     ""System.Action D<T>.<>x.<Target>w""
   IL_001b:  callvirt   ""void System.Action.Invoke()""
   IL_0020:  ret
 }
@@ -624,7 +624,7 @@ class E<V>
 {
   // Code size       33 (0x21)
   .maxstack  2
-  IL_0000:  ldsfld     ""System.Action D<T>.<>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Action D<T>.<>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -632,7 +632,7 @@ class E<V>
   IL_000a:  ldftn      ""void E<T>.Target()""
   IL_0010:  newobj     ""System.Action..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""System.Action D<T>.<>v.<Target>w""
+  IL_0016:  stsfld     ""System.Action D<T>.<>x.<Target>w""
   IL_001b:  callvirt   ""void System.Action.Invoke()""
   IL_0020:  ret
 }
@@ -668,7 +668,7 @@ class E<V>
 {
   // Code size       33 (0x21)
   .maxstack  2
-  IL_0000:  ldsfld     ""System.Action D<T>.<>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Action D<T>.<>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -676,7 +676,7 @@ class E<V>
   IL_000a:  ldftn      ""void E<T>.Target<double>()""
   IL_0010:  newobj     ""System.Action..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""System.Action D<T>.<>v.<Target>w""
+  IL_0016:  stsfld     ""System.Action D<T>.<>x.<Target>w""
   IL_001b:  callvirt   ""void System.Action.Invoke()""
   IL_0020:  ret
 }
@@ -712,7 +712,7 @@ class E<V>
 {
   // Code size       34 (0x22)
   .maxstack  2
-  IL_0000:  ldsfld     ""System.Func<T> D<T>.<>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Func<T> D<T>.<>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -720,7 +720,7 @@ class E<V>
   IL_000a:  ldftn      ""T E<int>.Target<T>()""
   IL_0010:  newobj     ""System.Func<T>..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""System.Func<T> D<T>.<>v.<Target>w""
+  IL_0016:  stsfld     ""System.Func<T> D<T>.<>x.<Target>w""
   IL_001b:  callvirt   ""T System.Func<T>.Invoke()""
   IL_0020:  pop
   IL_0021:  ret
@@ -757,7 +757,7 @@ class E<K>
 {
   // Code size       34 (0x22)
   .maxstack  2
-  IL_0000:  ldsfld     ""System.Func<int> D<T>.<>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Func<int> D<T>.<>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -765,7 +765,7 @@ class E<K>
   IL_000a:  ldftn      ""int E<T>.Target<int>()""
   IL_0010:  newobj     ""System.Func<int>..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""System.Func<int> D<T>.<>v.<Target>w""
+  IL_0016:  stsfld     ""System.Func<int> D<T>.<>x.<Target>w""
   IL_001b:  callvirt   ""int System.Func<int>.Invoke()""
   IL_0020:  pop
   IL_0021:  ret
@@ -803,7 +803,7 @@ class E<K>
   // Code size       43 (0x2b)
   .maxstack  2
   .locals init (T V_0)
-  IL_0000:  ldsfld     ""System.Func<T, int> D<T>.<>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Func<T, int> D<T>.<>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -811,7 +811,7 @@ class E<K>
   IL_000a:  ldftn      ""int E<T>.Target<int>(T)""
   IL_0010:  newobj     ""System.Func<T, int>..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""System.Func<T, int> D<T>.<>v.<Target>w""
+  IL_0016:  stsfld     ""System.Func<T, int> D<T>.<>x.<Target>w""
   IL_001b:  ldloca.s   V_0
   IL_001d:  initobj    ""T""
   IL_0023:  ldloc.0
@@ -1030,7 +1030,7 @@ class C
 {
   // Code size       33 (0x21)
   .maxstack  2
-  IL_0000:  ldsfld     ""MyAction<int> <>v.<Target>w""
+  IL_0000:  ldsfld     ""MyAction<int> <>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -1038,7 +1038,7 @@ class C
   IL_000a:  ldftn      ""void C.Target()""
   IL_0010:  newobj     ""MyAction<int>..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""MyAction<int> <>v.<Target>w""
+  IL_0016:  stsfld     ""MyAction<int> <>x.<Target>w""
   IL_001b:  callvirt   ""void MyAction<int>.Invoke()""
   IL_0020:  ret
 }
@@ -1067,7 +1067,7 @@ class C
 {
   // Code size       33 (0x21)
   .maxstack  2
-  IL_0000:  ldsfld     ""C.MyAction<int> <>v.<Target>w""
+  IL_0000:  ldsfld     ""C.MyAction<int> <>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -1075,7 +1075,7 @@ class C
   IL_000a:  ldftn      ""void C.Target()""
   IL_0010:  newobj     ""C.MyAction<int>..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""C.MyAction<int> <>v.<Target>w""
+  IL_0016:  stsfld     ""C.MyAction<int> <>x.<Target>w""
   IL_001b:  callvirt   ""void C.MyAction<int>.Invoke()""
   IL_0020:  ret
 }
@@ -1110,7 +1110,7 @@ class D<T>
 {
   // Code size       33 (0x21)
   .maxstack  2
-  IL_0000:  ldsfld     ""MyAction D<T>.<>v.<Target>w""
+  IL_0000:  ldsfld     ""MyAction D<T>.<>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -1118,7 +1118,7 @@ class D<T>
   IL_000a:  ldftn      ""void D<T>.Target()""
   IL_0010:  newobj     ""MyAction..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""MyAction D<T>.<>v.<Target>w""
+  IL_0016:  stsfld     ""MyAction D<T>.<>x.<Target>w""
   IL_001b:  callvirt   ""void MyAction.Invoke()""
   IL_0020:  ret
 }
@@ -1153,7 +1153,7 @@ class D<T>
 {
   // Code size       28 (0x1c)
   .maxstack  2
-  IL_0000:  ldsfld     ""D<T>.MyAction D<T>.<>v.<Target>w""
+  IL_0000:  ldsfld     ""D<T>.MyAction D<T>.<>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -1161,7 +1161,7 @@ class D<T>
   IL_000a:  ldftn      ""void D<T>.Target<int>()""
   IL_0010:  newobj     ""D<T>.MyAction..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""D<T>.MyAction D<T>.<>v.<Target>w""
+  IL_0016:  stsfld     ""D<T>.MyAction D<T>.<>x.<Target>w""
   IL_001b:  ret
 }
 ");
@@ -1196,7 +1196,7 @@ class D<T>
 {
   // Code size       33 (0x21)
   .maxstack  2
-  IL_0000:  ldsfld     ""D<T>.MyAction<int> D<T>.<>v.<Target>w""
+  IL_0000:  ldsfld     ""D<T>.MyAction<int> D<T>.<>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -1204,7 +1204,7 @@ class D<T>
   IL_000a:  ldftn      ""void D<T>.Target<T>()""
   IL_0010:  newobj     ""D<T>.MyAction<int>..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""D<T>.MyAction<int> D<T>.<>v.<Target>w""
+  IL_0016:  stsfld     ""D<T>.MyAction<int> D<T>.<>x.<Target>w""
   IL_001b:  callvirt   ""void D<T>.MyAction<int>.Invoke()""
   IL_0020:  ret
 }
@@ -1242,7 +1242,7 @@ class E<V>
 {
   // Code size       33 (0x21)
   .maxstack  2
-  IL_0000:  ldsfld     ""D<T>.MyAction<T> D<T>.<>v.<Target>w""
+  IL_0000:  ldsfld     ""D<T>.MyAction<T> D<T>.<>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -1250,7 +1250,7 @@ class E<V>
   IL_000a:  ldftn      ""void E<T>.Target()""
   IL_0010:  newobj     ""D<T>.MyAction<T>..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""D<T>.MyAction<T> D<T>.<>v.<Target>w""
+  IL_0016:  stsfld     ""D<T>.MyAction<T> D<T>.<>x.<Target>w""
   IL_001b:  callvirt   ""void D<T>.MyAction<T>.Invoke()""
   IL_0020:  ret
 }
@@ -1288,7 +1288,7 @@ class E<V>
 {
   // Code size       33 (0x21)
   .maxstack  2
-  IL_0000:  ldsfld     ""D<T>.MyAction<T> D<T>.<>v.<Target>w""
+  IL_0000:  ldsfld     ""D<T>.MyAction<T> D<T>.<>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -1296,7 +1296,7 @@ class E<V>
   IL_000a:  ldftn      ""void E<T>.Target<int>()""
   IL_0010:  newobj     ""D<T>.MyAction<T>..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""D<T>.MyAction<T> D<T>.<>v.<Target>w""
+  IL_0016:  stsfld     ""D<T>.MyAction<T> D<T>.<>x.<Target>w""
   IL_001b:  callvirt   ""void D<T>.MyAction<T>.Invoke()""
   IL_0020:  ret
 }
@@ -1334,7 +1334,7 @@ class E<K>
 {
   // Code size       34 (0x22)
   .maxstack  2
-  IL_0000:  ldsfld     ""D<T>.MyFunc D<T>.<>v.<Target>w""
+  IL_0000:  ldsfld     ""D<T>.MyFunc D<T>.<>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -1342,7 +1342,7 @@ class E<K>
   IL_000a:  ldftn      ""T E<T>.Target<T, int>()""
   IL_0010:  newobj     ""D<T>.MyFunc..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""D<T>.MyFunc D<T>.<>v.<Target>w""
+  IL_0016:  stsfld     ""D<T>.MyFunc D<T>.<>x.<Target>w""
   IL_001b:  callvirt   ""T D<T>.MyFunc.Invoke()""
   IL_0020:  pop
   IL_0021:  ret
@@ -1382,7 +1382,7 @@ class E<K>
   // Code size       43 (0x2b)
   .maxstack  2
   .locals init (T V_0)
-  IL_0000:  ldsfld     ""D<T>.MyFunc D<T>.<>v.<Target>w""
+  IL_0000:  ldsfld     ""D<T>.MyFunc D<T>.<>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -1390,7 +1390,7 @@ class E<K>
   IL_000a:  ldftn      ""int E<T>.Target<int>(T)""
   IL_0010:  newobj     ""D<T>.MyFunc..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""D<T>.MyFunc D<T>.<>v.<Target>w""
+  IL_0016:  stsfld     ""D<T>.MyFunc D<T>.<>x.<Target>w""
   IL_001b:  ldloca.s   V_0
   IL_001d:  initobj    ""T""
   IL_0023:  ldloc.0
@@ -1433,7 +1433,7 @@ class E<K>
   // Code size       43 (0x2b)
   .maxstack  2
   .locals init (M V_0)
-  IL_0000:  ldsfld     ""D<T, M>.MyFunc D<T, M>.<>v.<Target>w""
+  IL_0000:  ldsfld     ""D<T, M>.MyFunc D<T, M>.<>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -1441,7 +1441,7 @@ class E<K>
   IL_000a:  ldftn      ""T E<M>.Target<T>(M)""
   IL_0010:  newobj     ""D<T, M>.MyFunc..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""D<T, M>.MyFunc D<T, M>.<>v.<Target>w""
+  IL_0016:  stsfld     ""D<T, M>.MyFunc D<T, M>.<>x.<Target>w""
   IL_001b:  ldloca.s   V_0
   IL_001d:  initobj    ""M""
   IL_0023:  ldloc.0
@@ -1474,7 +1474,7 @@ class C
 {
   // Code size       33 (0x21)
   .maxstack  2
-  IL_0000:  ldsfld     ""C.MyAction<int> C.<>v.<Target>w""
+  IL_0000:  ldsfld     ""C.MyAction<int> C.<>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -1482,7 +1482,7 @@ class C
   IL_000a:  ldftn      ""void C.Target()""
   IL_0010:  newobj     ""C.MyAction<int>..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""C.MyAction<int> C.<>v.<Target>w""
+  IL_0016:  stsfld     ""C.MyAction<int> C.<>x.<Target>w""
   IL_001b:  callvirt   ""void C.MyAction<int>.Invoke()""
   IL_0020:  ret
 }
@@ -1666,7 +1666,7 @@ class E<V>
   // Code size       42 (0x2a)
   .maxstack  2
   .locals init (T V_0)
-  IL_0000:  ldsfld     ""D<T>.MyAction D<T>.<>v.<Target>w""
+  IL_0000:  ldsfld     ""D<T>.MyAction D<T>.<>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -1674,7 +1674,7 @@ class E<V>
   IL_000a:  ldftn      ""void E<int>.Target<C>(C)""
   IL_0010:  newobj     ""D<T>.MyAction..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""D<T>.MyAction D<T>.<>v.<Target>w""
+  IL_0016:  stsfld     ""D<T>.MyAction D<T>.<>x.<Target>w""
   IL_001b:  ldloca.s   V_0
   IL_001d:  initobj    ""T""
   IL_0023:  ldloc.0
@@ -1884,7 +1884,7 @@ static class E
 {
   // Code size       34 (0x22)
   .maxstack  2
-  IL_0000:  ldsfld     ""System.Action<C> <>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Action<C> <>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -1892,7 +1892,7 @@ static class E
   IL_000a:  ldftn      ""void E.Target(C)""
   IL_0010:  newobj     ""System.Action<C>..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""System.Action<C> <>v.<Target>w""
+  IL_0016:  stsfld     ""System.Action<C> <>x.<Target>w""
   IL_001b:  ldnull
   IL_001c:  callvirt   ""void System.Action<C>.Invoke(C)""
   IL_0021:  ret
@@ -1922,7 +1922,7 @@ static class E
 {
   // Code size       34 (0x22)
   .maxstack  2
-  IL_0000:  ldsfld     ""System.Action<C> <>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Action<C> <>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -1930,7 +1930,7 @@ static class E
   IL_000a:  ldftn      ""void E.Target<C>(C)""
   IL_0010:  newobj     ""System.Action<C>..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""System.Action<C> <>v.<Target>w""
+  IL_0016:  stsfld     ""System.Action<C> <>x.<Target>w""
   IL_001b:  ldnull
   IL_001c:  callvirt   ""void System.Action<C>.Invoke(C)""
   IL_0021:  ret
@@ -1957,12 +1957,12 @@ static class E
 {
   // Code size       25 (0x19)
   .maxstack  2
-  IL_0000:  ldsfld     ""System.Action<int> <>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Action<int> <>x.<Target>w""
   IL_0005:  brtrue.s   IL_0018
   IL_0007:  ldnull
   IL_0008:  ldftn      ""void E.Target<int>(int)""
   IL_000e:  newobj     ""System.Action<int>..ctor(object, System.IntPtr)""
-  IL_0013:  stsfld     ""System.Action<int> <>v.<Target>w""
+  IL_0013:  stsfld     ""System.Action<int> <>x.<Target>w""
   IL_0018:  ret
 }
 ");
@@ -1998,7 +1998,7 @@ static class E
   // Code size       42 (0x2a)
   .maxstack  2
   .locals init (T V_0)
-  IL_0000:  ldsfld     ""System.Action<T> D<T>.<>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Action<T> D<T>.<>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -2006,7 +2006,7 @@ static class E
   IL_000a:  ldftn      ""void E.Target(C)""
   IL_0010:  newobj     ""System.Action<T>..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""System.Action<T> D<T>.<>v.<Target>w""
+  IL_0016:  stsfld     ""System.Action<T> D<T>.<>x.<Target>w""
   IL_001b:  ldloca.s   V_0
   IL_001d:  initobj    ""T""
   IL_0023:  ldloc.0
@@ -2045,7 +2045,7 @@ static class E
 {
   // Code size       34 (0x22)
   .maxstack  2
-  IL_0000:  ldsfld     ""System.Action<K> D<K>.<>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Action<K> D<K>.<>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -2053,7 +2053,7 @@ static class E
   IL_000a:  ldftn      ""void E.Target<K>(K)""
   IL_0010:  newobj     ""System.Action<K>..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""System.Action<K> D<K>.<>v.<Target>w""
+  IL_0016:  stsfld     ""System.Action<K> D<K>.<>x.<Target>w""
   IL_001b:  ldarg.0
   IL_001c:  callvirt   ""void System.Action<K>.Invoke(K)""
   IL_0021:  ret
@@ -2083,12 +2083,12 @@ static class E
 {
   // Code size       25 (0x19)
   .maxstack  2
-  IL_0000:  ldsfld     ""System.Action<T> E.F<T>.<>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Action<T> E.F<T>.<>x.<Target>w""
   IL_0005:  brtrue.s   IL_0018
   IL_0007:  ldnull
   IL_0008:  ldftn      ""void E.Target<T>(T)""
   IL_000e:  newobj     ""System.Action<T>..ctor(object, System.IntPtr)""
-  IL_0013:  stsfld     ""System.Action<T> E.F<T>.<>v.<Target>w""
+  IL_0013:  stsfld     ""System.Action<T> E.F<T>.<>x.<Target>w""
   IL_0018:  ret
 }
 ");
@@ -2235,7 +2235,7 @@ class C
 {
   // Code size       33 (0x21)
   .maxstack  2
-  IL_0000:  ldsfld     ""System.Action <>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Action <>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -2243,7 +2243,7 @@ class C
   IL_000a:  ldftn      ""void C.Target()""
   IL_0010:  newobj     ""System.Action..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""System.Action <>v.<Target>w""
+  IL_0016:  stsfld     ""System.Action <>x.<Target>w""
   IL_001b:  call       ""void C.Invoke(System.Action)""
   IL_0020:  ret
 }
@@ -2272,7 +2272,7 @@ class D
 {
   // Code size       33 (0x21)
   .maxstack  2
-  IL_0000:  ldsfld     ""System.Action <>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Action <>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -2280,7 +2280,7 @@ class D
   IL_000a:  ldftn      ""void D.Target()""
   IL_0010:  newobj     ""System.Action..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""System.Action <>v.<Target>w""
+  IL_0016:  stsfld     ""System.Action <>x.<Target>w""
   IL_001b:  callvirt   ""void System.Action.Invoke()""
   IL_0020:  ret
 }
@@ -2317,7 +2317,7 @@ class D<T>
 {
   // Code size       34 (0x22)
   .maxstack  2
-  IL_0000:  ldsfld     ""System.Func<T> D<T>.<>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Func<T> D<T>.<>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -2325,7 +2325,7 @@ class D<T>
   IL_000a:  ldftn      ""T D<T>.Target()""
   IL_0010:  newobj     ""System.Func<T>..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""System.Func<T> D<T>.<>v.<Target>w""
+  IL_0016:  stsfld     ""System.Func<T> D<T>.<>x.<Target>w""
   IL_001b:  callvirt   ""T System.Func<T>.Invoke()""
   IL_0020:  pop
   IL_0021:  ret
@@ -2363,7 +2363,7 @@ class E
 {
   // Code size       28 (0x1c)
   .maxstack  2
-  IL_0000:  ldsfld     ""D<T>.MyFunc D<T>.<>v.<Target>w""
+  IL_0000:  ldsfld     ""D<T>.MyFunc D<T>.<>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -2371,7 +2371,7 @@ class E
   IL_000a:  ldftn      ""T E.Target<T>()""
   IL_0010:  newobj     ""D<T>.MyFunc..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""D<T>.MyFunc D<T>.<>v.<Target>w""
+  IL_0016:  stsfld     ""D<T>.MyFunc D<T>.<>x.<Target>w""
   IL_001b:  ret
 }
 ");
@@ -2486,7 +2486,7 @@ class C
 ";
             Action<ModuleSymbol> containerValidator = module =>
             {
-                var container = module.GlobalNamespace.GetTypeMember("<>v");
+                var container = module.GlobalNamespace.GetTypeMember("<>x");
                 Assert.NotNull(container);
                 Assert.Equal(0, container.Arity);
 
@@ -2527,7 +2527,7 @@ static class E
 ";
             Action<ModuleSymbol> containerValidator = module =>
             {
-                var container = module.GlobalNamespace.GetTypeMember("<>v");
+                var container = module.GlobalNamespace.GetTypeMember("<>x");
                 Assert.NotNull(container);
                 Assert.Equal(0, container.Arity);
 
@@ -2566,7 +2566,7 @@ class D
 ";
             Action<ModuleSymbol> containerValidator = module =>
             {
-                var container = module.GlobalNamespace.GetMember<NamedTypeSymbol>("C.<>v");
+                var container = module.GlobalNamespace.GetMember<NamedTypeSymbol>("C.<>x");
                 Assert.NotNull(container);
                 Assert.Equal(0, container.Arity);
 
@@ -2601,7 +2601,7 @@ class C<T>
 ";
             Action<ModuleSymbol> containerValidator = module =>
             {
-                var container = module.GlobalNamespace.GetMember<NamedTypeSymbol>("C.<>v");
+                var container = module.GlobalNamespace.GetMember<NamedTypeSymbol>("C.<>x");
                 Assert.NotNull(container);
                 Assert.Equal(0, container.Arity);
 
@@ -2638,7 +2638,7 @@ class C<T, V>
 ";
             Action<ModuleSymbol> containerValidator = module =>
             {
-                var container = module.GlobalNamespace.GetMember<NamedTypeSymbol>("C.<>v");
+                var container = module.GlobalNamespace.GetMember<NamedTypeSymbol>("C.<>x");
                 Assert.NotNull(container);
                 Assert.Equal(0, container.Arity);
 
@@ -2812,7 +2812,7 @@ class D
 ";
             Action<ModuleSymbol> containerValidator = module =>
             {
-                var container = module.GlobalNamespace.GetTypeMember("<>v");
+                var container = module.GlobalNamespace.GetTypeMember("<>x");
                 Assert.NotNull(container);
                 Assert.Equal(0, container.Arity);
 
@@ -2875,7 +2875,7 @@ static class E
 ";
             Action<ModuleSymbol> containerValidator = module =>
             {
-                var container = module.GlobalNamespace.GetTypeMember("<>v");
+                var container = module.GlobalNamespace.GetTypeMember("<>x");
                 Assert.NotNull(container);
                 Assert.Equal(0, container.Arity);
 
@@ -2930,7 +2930,7 @@ static class E
 ";
             Action<ModuleSymbol> containerValidator = module =>
             {
-                var container0 = module.GlobalNamespace.GetTypeMember("<>v");
+                var container0 = module.GlobalNamespace.GetTypeMember("<>x");
                 Assert.NotNull(container0);
                 Assert.Equal(0, container0.Arity);
 
@@ -2954,7 +2954,7 @@ static class E
                 Assert.Equal("Action", fieldType0.Name);
                 Assert.Equal(0, fieldType0.Arity);
 
-                var container1 = module.GlobalNamespace.GetTypeMember("<>v__1");
+                var container1 = module.GlobalNamespace.GetTypeMember("<>x__1");
                 Assert.NotNull(container1);
                 Assert.Equal(0, container1.Arity);
 
@@ -2983,30 +2983,30 @@ static class E
 {
   // Code size       97 (0x61)
   .maxstack  2
-  IL_0000:  ldsfld     ""System.Action <>v.<Target0>w""
+  IL_0000:  ldsfld     ""System.Action <>x.<Target0>w""
   IL_0005:  brtrue.s   IL_0018
   IL_0007:  ldnull
   IL_0008:  ldftn      ""void C.Target0()""
   IL_000e:  newobj     ""System.Action..ctor(object, System.IntPtr)""
-  IL_0013:  stsfld     ""System.Action <>v.<Target0>w""
-  IL_0018:  ldsfld     ""System.Action <>v.<Target1>w__1""
+  IL_0013:  stsfld     ""System.Action <>x.<Target0>w""
+  IL_0018:  ldsfld     ""System.Action <>x.<Target1>w__1""
   IL_001d:  brtrue.s   IL_0030
   IL_001f:  ldnull
   IL_0020:  ldftn      ""void C.Target1()""
   IL_0026:  newobj     ""System.Action..ctor(object, System.IntPtr)""
-  IL_002b:  stsfld     ""System.Action <>v.<Target1>w__1""
-  IL_0030:  ldsfld     ""System.Action<C> <>v__1.<Target0>w""
+  IL_002b:  stsfld     ""System.Action <>x.<Target1>w__1""
+  IL_0030:  ldsfld     ""System.Action<C> <>x__1.<Target0>w""
   IL_0035:  brtrue.s   IL_0048
   IL_0037:  ldnull
   IL_0038:  ldftn      ""void E.Target0(C)""
   IL_003e:  newobj     ""System.Action<C>..ctor(object, System.IntPtr)""
-  IL_0043:  stsfld     ""System.Action<C> <>v__1.<Target0>w""
-  IL_0048:  ldsfld     ""System.Action<C> <>v__1.<Target1>w__1""
+  IL_0043:  stsfld     ""System.Action<C> <>x__1.<Target0>w""
+  IL_0048:  ldsfld     ""System.Action<C> <>x__1.<Target1>w__1""
   IL_004d:  brtrue.s   IL_0060
   IL_004f:  ldnull
   IL_0050:  ldftn      ""void E.Target1(C)""
   IL_0056:  newobj     ""System.Action<C>..ctor(object, System.IntPtr)""
-  IL_005b:  stsfld     ""System.Action<C> <>v__1.<Target1>w__1""
+  IL_005b:  stsfld     ""System.Action<C> <>x__1.<Target1>w__1""
   IL_0060:  ret
 }
 ");
@@ -3085,7 +3085,7 @@ static class E
                 var T = A.TypeParameters[0];
                 var V = B.TypeParameters[0];
 
-                var container = B.GetTypeMember("<>v");
+                var container = B.GetTypeMember("<>x");
                 Assert.NotNull(container);
                 Assert.Equal(0, container.Arity);
 
@@ -3383,7 +3383,7 @@ class C
   // Code size       38 (0x26)
   .maxstack  3
   IL_0000:  call       ""System.AppDomain System.AppDomain.CurrentDomain.get""
-  IL_0005:  ldsfld     ""System.ResolveEventHandler <>v.<Target>w""
+  IL_0005:  ldsfld     ""System.ResolveEventHandler <>x.<Target>w""
   IL_000a:  dup
   IL_000b:  brtrue.s   IL_0020
   IL_000d:  pop
@@ -3391,7 +3391,7 @@ class C
   IL_000f:  ldftn      ""System.Reflection.Assembly C.Target(object, System.ResolveEventArgs)""
   IL_0015:  newobj     ""System.ResolveEventHandler..ctor(object, System.IntPtr)""
   IL_001a:  dup
-  IL_001b:  stsfld     ""System.ResolveEventHandler <>v.<Target>w""
+  IL_001b:  stsfld     ""System.ResolveEventHandler <>x.<Target>w""
   IL_0020:  callvirt   ""void System.AppDomain.AssemblyResolve.add""
   IL_0025:  ret
 }
@@ -3425,7 +3425,7 @@ class D
   // Code size       38 (0x26)
   .maxstack  3
   IL_0000:  newobj     ""C<MyEventArgs>..ctor()""
-  IL_0005:  ldsfld     ""System.EventHandler<MyEventArgs> <>v.<Target>w""
+  IL_0005:  ldsfld     ""System.EventHandler<MyEventArgs> <>x.<Target>w""
   IL_000a:  dup
   IL_000b:  brtrue.s   IL_0020
   IL_000d:  pop
@@ -3433,7 +3433,7 @@ class D
   IL_000f:  ldftn      ""void D.Target(object, MyEventArgs)""
   IL_0015:  newobj     ""System.EventHandler<MyEventArgs>..ctor(object, System.IntPtr)""
   IL_001a:  dup
-  IL_001b:  stsfld     ""System.EventHandler<MyEventArgs> <>v.<Target>w""
+  IL_001b:  stsfld     ""System.EventHandler<MyEventArgs> <>x.<Target>w""
   IL_0020:  callvirt   ""void C<MyEventArgs>.SomethingHappened.add""
   IL_0025:  ret
 }
@@ -3462,7 +3462,7 @@ class C<TEventArgs> where TEventArgs : EventArgs
   // Code size       34 (0x22)
   .maxstack  3
   IL_0000:  ldarg.0
-  IL_0001:  ldsfld     ""System.EventHandler<TEventArgs> C<TEventArgs>.<>v.<Target>w""
+  IL_0001:  ldsfld     ""System.EventHandler<TEventArgs> C<TEventArgs>.<>x.<Target>w""
   IL_0006:  dup
   IL_0007:  brtrue.s   IL_001c
   IL_0009:  pop
@@ -3470,7 +3470,7 @@ class C<TEventArgs> where TEventArgs : EventArgs
   IL_000b:  ldftn      ""void C<TEventArgs>.Target(object, TEventArgs)""
   IL_0011:  newobj     ""System.EventHandler<TEventArgs>..ctor(object, System.IntPtr)""
   IL_0016:  dup
-  IL_0017:  stsfld     ""System.EventHandler<TEventArgs> C<TEventArgs>.<>v.<Target>w""
+  IL_0017:  stsfld     ""System.EventHandler<TEventArgs> C<TEventArgs>.<>x.<Target>w""
   IL_001c:  call       ""void C<TEventArgs>.SomethingHappened.add""
   IL_0021:  ret
 }
@@ -3537,7 +3537,7 @@ class C
   .maxstack  3
   IL_0000:  ldc.i4.0
   IL_0001:  newobj     ""<>f__AnonymousType0<int>..ctor(int)""
-  IL_0006:  ldsfld     ""System.Action<<anonymous type: int x>> <>v.<Target>w""
+  IL_0006:  ldsfld     ""System.Action<<anonymous type: int x>> <>x.<Target>w""
   IL_000b:  dup
   IL_000c:  brtrue.s   IL_0021
   IL_000e:  pop
@@ -3545,7 +3545,7 @@ class C
   IL_0010:  ldftn      ""void C.Target<<anonymous type: int x>>(<anonymous type: int x>)""
   IL_0016:  newobj     ""System.Action<<anonymous type: int x>>..ctor(object, System.IntPtr)""
   IL_001b:  dup
-  IL_001c:  stsfld     ""System.Action<<anonymous type: int x>> <>v.<Target>w""
+  IL_001c:  stsfld     ""System.Action<<anonymous type: int x>> <>x.<Target>w""
   IL_0021:  call       ""void C.Invoke<<anonymous type: int x>>(<anonymous type: int x>, System.Action<<anonymous type: int x>>)""
   IL_0026:  ret
 }
@@ -3576,7 +3576,7 @@ class D<G>
   .maxstack  3
   IL_0000:  ldarg.1
   IL_0001:  newobj     ""<>f__AnonymousType0<G>..ctor(G)""
-  IL_0006:  ldsfld     ""System.Action<<anonymous type: G x>> D<G>.<>v.<Target>w""
+  IL_0006:  ldsfld     ""System.Action<<anonymous type: G x>> D<G>.<>x.<Target>w""
   IL_000b:  dup
   IL_000c:  brtrue.s   IL_0021
   IL_000e:  pop
@@ -3584,7 +3584,7 @@ class D<G>
   IL_0010:  ldftn      ""void D<G>.Target<<anonymous type: G x>>(<anonymous type: G x>)""
   IL_0016:  newobj     ""System.Action<<anonymous type: G x>>..ctor(object, System.IntPtr)""
   IL_001b:  dup
-  IL_001c:  stsfld     ""System.Action<<anonymous type: G x>> D<G>.<>v.<Target>w""
+  IL_001c:  stsfld     ""System.Action<<anonymous type: G x>> D<G>.<>x.<Target>w""
   IL_0021:  call       ""void D<G>.Invoke<<anonymous type: G x>>(<anonymous type: G x>, System.Action<<anonymous type: G x>>)""
   IL_0026:  ret
 }
@@ -3617,7 +3617,7 @@ class E
   .maxstack  3
   IL_0000:  ldarg.1
   IL_0001:  newobj     ""<>f__AnonymousType0<G>..ctor(G)""
-  IL_0006:  ldsfld     ""System.Action<<anonymous type: G x>> D<G>.<>v.<Target>w""
+  IL_0006:  ldsfld     ""System.Action<<anonymous type: G x>> D<G>.<>x.<Target>w""
   IL_000b:  dup
   IL_000c:  brtrue.s   IL_0021
   IL_000e:  pop
@@ -3625,7 +3625,7 @@ class E
   IL_0010:  ldftn      ""void E.Target<<anonymous type: G x>>(<anonymous type: G x>)""
   IL_0016:  newobj     ""System.Action<<anonymous type: G x>>..ctor(object, System.IntPtr)""
   IL_001b:  dup
-  IL_001c:  stsfld     ""System.Action<<anonymous type: G x>> D<G>.<>v.<Target>w""
+  IL_001c:  stsfld     ""System.Action<<anonymous type: G x>> D<G>.<>x.<Target>w""
   IL_0021:  call       ""void D<G>.Invoke<<anonymous type: G x>>(<anonymous type: G x>, System.Action<<anonymous type: G x>>)""
   IL_0026:  ret
 }
@@ -3658,7 +3658,7 @@ class D<G>
   .maxstack  3
   IL_0000:  ldc.i4.0
   IL_0001:  newobj     ""<>f__AnonymousType0<int>..ctor(int)""
-  IL_0006:  ldsfld     ""D<G>.MyAction<<anonymous type: int x>> D<G>.<>v.<Target>w""
+  IL_0006:  ldsfld     ""D<G>.MyAction<<anonymous type: int x>> D<G>.<>x.<Target>w""
   IL_000b:  dup
   IL_000c:  brtrue.s   IL_0021
   IL_000e:  pop
@@ -3666,7 +3666,7 @@ class D<G>
   IL_0010:  ldftn      ""void D<G>.Target<<anonymous type: int x>>(<anonymous type: int x>)""
   IL_0016:  newobj     ""D<G>.MyAction<<anonymous type: int x>>..ctor(object, System.IntPtr)""
   IL_001b:  dup
-  IL_001c:  stsfld     ""D<G>.MyAction<<anonymous type: int x>> D<G>.<>v.<Target>w""
+  IL_001c:  stsfld     ""D<G>.MyAction<<anonymous type: int x>> D<G>.<>x.<Target>w""
   IL_0021:  call       ""void D<G>.Invoke<<anonymous type: int x>>(<anonymous type: int x>, D<G>.MyAction<<anonymous type: int x>>)""
   IL_0026:  ret
 }
@@ -3772,7 +3772,7 @@ class C
 {
   // Code size       34 (0x22)
   .maxstack  2
-  IL_0000:  ldsfld     ""System.Func<int*[]> <>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Func<int*[]> <>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -3780,7 +3780,7 @@ class C
   IL_000a:  ldftn      ""int*[] C.Target()""
   IL_0010:  newobj     ""System.Func<int*[]>..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""System.Func<int*[]> <>v.<Target>w""
+  IL_0016:  stsfld     ""System.Func<int*[]> <>x.<Target>w""
   IL_001b:  callvirt   ""int*[] System.Func<int*[]>.Invoke()""
   IL_0020:  pop
   IL_0021:  ret
@@ -3809,7 +3809,7 @@ class C<T>
   // Code size       43 (0x2b)
   .maxstack  2
   .locals init (T V_0)
-  IL_0000:  ldsfld     ""System.Func<T, int*[]> C<T>.<>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Func<T, int*[]> C<T>.<>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -3817,7 +3817,7 @@ class C<T>
   IL_000a:  ldftn      ""int*[] C<T>.Target(T)""
   IL_0010:  newobj     ""System.Func<T, int*[]>..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""System.Func<T, int*[]> C<T>.<>v.<Target>w""
+  IL_0016:  stsfld     ""System.Func<T, int*[]> C<T>.<>x.<Target>w""
   IL_001b:  ldloca.s   V_0
   IL_001d:  initobj    ""T""
   IL_0023:  ldloc.0
@@ -3885,7 +3885,7 @@ class C
 {
   // Code size       34 (0x22)
   .maxstack  2
-  IL_0000:  ldsfld     ""System.Func<dynamic> <>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Func<dynamic> <>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -3893,7 +3893,7 @@ class C
   IL_000a:  ldftn      ""dynamic C.Target()""
   IL_0010:  newobj     ""System.Func<dynamic>..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""System.Func<dynamic> <>v.<Target>w""
+  IL_0016:  stsfld     ""System.Func<dynamic> <>x.<Target>w""
   IL_001b:  callvirt   ""dynamic System.Func<dynamic>.Invoke()""
   IL_0020:  pop
   IL_0021:  ret
@@ -3922,7 +3922,7 @@ class C<T>
   // Code size       43 (0x2b)
   .maxstack  2
   .locals init (T V_0)
-  IL_0000:  ldsfld     ""System.Func<T, dynamic> C<T>.<>v.<Target>w""
+  IL_0000:  ldsfld     ""System.Func<T, dynamic> C<T>.<>x.<Target>w""
   IL_0005:  dup
   IL_0006:  brtrue.s   IL_001b
   IL_0008:  pop
@@ -3930,7 +3930,7 @@ class C<T>
   IL_000a:  ldftn      ""dynamic C<T>.Target(T)""
   IL_0010:  newobj     ""System.Func<T, dynamic>..ctor(object, System.IntPtr)""
   IL_0015:  dup
-  IL_0016:  stsfld     ""System.Func<T, dynamic> C<T>.<>v.<Target>w""
+  IL_0016:  stsfld     ""System.Func<T, dynamic> C<T>.<>x.<Target>w""
   IL_001b:  ldloca.s   V_0
   IL_001d:  initobj    ""T""
   IL_0023:  ldloc.0
@@ -4014,7 +4014,7 @@ class C
   IL_0004:  call       ""void System.Console.WriteLine(object)""
   IL_0009:  dup
   IL_000a:  brtrue.s   IL_0029
-  IL_000c:  ldsfld     ""System.Func<int> <>v.<M>w""
+  IL_000c:  ldsfld     ""System.Func<int> <>x.<M>w""
   IL_0011:  dup
   IL_0012:  brtrue.s   IL_002a
   IL_0014:  pop
@@ -4022,14 +4022,14 @@ class C
   IL_0016:  ldftn      ""int C.M()""
   IL_001c:  newobj     ""System.Func<int>..ctor(object, System.IntPtr)""
   IL_0021:  dup
-  IL_0022:  stsfld     ""System.Func<int> <>v.<M>w""
+  IL_0022:  stsfld     ""System.Func<int> <>x.<M>w""
   IL_0027:  br.s       IL_002a
   IL_0029:  ldloc.0
   IL_002a:  call       ""void System.Console.WriteLine(object)""
   IL_002f:  brtrue.s   IL_0034
   IL_0031:  ldloc.0
   IL_0032:  br.s       IL_004f
-  IL_0034:  ldsfld     ""System.Func<int> <>v.<M>w""
+  IL_0034:  ldsfld     ""System.Func<int> <>x.<M>w""
   IL_0039:  dup
   IL_003a:  brtrue.s   IL_004f
   IL_003c:  pop
@@ -4037,7 +4037,7 @@ class C
   IL_003e:  ldftn      ""int C.M()""
   IL_0044:  newobj     ""System.Func<int>..ctor(object, System.IntPtr)""
   IL_0049:  dup
-  IL_004a:  stsfld     ""System.Func<int> <>v.<M>w""
+  IL_004a:  stsfld     ""System.Func<int> <>x.<M>w""
   IL_004f:  call       ""void System.Console.WriteLine(object)""
   IL_0054:  ret
 }

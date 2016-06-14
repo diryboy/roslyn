@@ -18,19 +18,6 @@
     <RestorePackages>true</RestorePackages>
     <CopyNuGetImplementations>true</CopyNuGetImplementations>
   </PropertyGroup>
-  <ItemGroup Label="File References">
-    <Reference Include="Microsoft.VisualStudio.Composition, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>$(DevEnvDir)\PrivateAssemblies\Microsoft.VisualStudio.Composition.dll</HintPath>
-      <CopyLocal>True</CopyLocal>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Composition.Configuration, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
-      <HintPath>$(DevEnvDir)\PrivateAssemblies\Microsoft.VisualStudio.Composition.Configuration.dll</HintPath>
-      <CopyLocal>True</CopyLocal>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Platform.VSEditor.Interop.dll">
-      <HintPath>$(DevEnvDir)\PrivateAssemblies\Microsoft.VisualStudio.Platform.VSEditor.Interop.dll</HintPath>
-    </Reference>
-  </ItemGroup>
   <ItemGroup Label="Project References">
     <ProjectReference Include="..\..\Compilers\Core\Portable\CodeAnalysis.csproj">
       <Project>{1EE8CAD3-55F9-4D91-96B2-084641DA9A6C}</Project>
@@ -148,34 +135,10 @@
     <InternalsVisibleToTest Include="Roslyn.Services.Editor.UnitTests2" />
     <InternalsVisibleToTest Include="Roslyn.Services.Editor.VisualBasic.UnitTests" />
     <InternalsVisibleToTest Include="Roslyn.VisualStudio.Services.UnitTests" />
+    <InternalsVisibleToTest Include="Roslyn.VisualStudio.CSharp.UnitTests" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
-    <Reference Include="Microsoft.VisualStudio.CoreUtility, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Language.CallHierarchy, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.VisualStudio.Language.Intellisense, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Language.NavigateTo.Interfaces, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.VisualStudio.Language.StandardClassification, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Platform.VSEditor, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.VisualStudio.Text.Data, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.Internal, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-    <Reference Include="Microsoft.VisualStudio.Text.Logic, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.UI, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Microsoft.VisualStudio.Text.UI.Wpf, Version=$(VisualStudioReferenceAssemblyVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>false</Private>
-    </Reference>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
     <Reference Include="System" />
@@ -190,6 +153,7 @@
     <Compile Include="Attributes\AttributeTests.cs" />
     <Compile Include="AutomaticCompletion\AbstractAutomaticBraceCompletionTests.cs" />
     <Compile Include="AutomaticCompletion\AbstractAutomaticLineEnderTests.cs" />
+    <Compile Include="BlockCommentEditing\AbstractBlockCommentEditingTests.cs" />
     <Compile Include="BraceHighlighting\AbstractBraceHighlightingTests.cs" />
     <Compile Include="BraceMatching\AbstractBraceMatcherTests.cs" />
     <Compile Include="CallHierarchy\CallHierarchyTestState.cs" />
@@ -235,6 +199,8 @@
     <Compile Include="Diagnostics\AbstractSuppressionDiagnosticTest.cs" />
     <Compile Include="Diagnostics\AbstractDiagnosticProviderBasedUserDiagnosticTest.cs" />
     <Compile Include="Diagnostics\AbstractUserDiagnosticTest.cs" />
+    <Compile Include="Diagnostics\DiagnosticAnalyzerServiceTests.cs" />
+    <Compile Include="Diagnostics\DiagnosticDataSerializerTests.cs" />
     <Compile Include="Diagnostics\MockDiagnosticUpdateSourceRegistrationService.cs" />
     <Compile Include="Diagnostics\TestAnalyzerReferenceByLanguage.cs" />
     <Compile Include="Diagnostics\TestDiagnosticAnalyzerDriver.cs" />
@@ -251,10 +217,12 @@
     <Compile Include="CodeFixes\ExtensionOrderingTests.cs" />
     <Compile Include="Diagnostics\TestHostDiagnosticUpdateSource.cs" />
     <Compile Include="Extensions\SourceTextContainerExtensionsTests.cs" />
+    <Compile Include="Extensions\WorkspaceExtensions.cs" />
     <Compile Include="GoToAdjacentMember\AbstractGoToAdjacentMemberTests.cs" />
     <Compile Include="Outlining\AbstractSyntaxNodeOutlinerTests.cs" />
     <Compile Include="Outlining\AbstractSyntaxOutlinerTests.cs" />
     <Compile Include="Outlining\AbstractSyntaxTriviaOutlinerTests.cs" />
+    <Compile Include="Outlining\OutliningServiceTests.cs" />
     <Compile Include="Preview\TestOnly_CompilerDiagnosticAnalyzerProviderService.cs" />
     <Compile Include="DocCommentFormatting\DocCommentFormattingTests.cs" />
     <Compile Include="DocumentationComments\AbstractDocumentationCommentTests.cs" />

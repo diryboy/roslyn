@@ -455,7 +455,7 @@ Namespace Microsoft.CodeAnalysis.VisualBasic
         Protected Overridable Sub NoteBranch(pending As PendingBranch, stmt As BoundStatement, labelStmt As BoundLabelStatement)
         End Sub
 
-        Private Function GetBranchTargetLabel(branch As BoundStatement, gotoOnly As Boolean) As LabelSymbol
+        Private Shared Function GetBranchTargetLabel(branch As BoundStatement, gotoOnly As Boolean) As LabelSymbol
             Select Case branch.Kind
                 Case BoundKind.GotoStatement
                     Return DirectCast(branch, BoundGotoStatement).Label
@@ -1667,7 +1667,7 @@ lUnsplitAndFinish:
         End Function
 
         ''' <summary> Bound field access passed may require tracking if it is an access to a non-shared structure field </summary>
-        Protected Function FieldAccessMayRequireTracking(fieldAccess As BoundFieldAccess) As Boolean
+        Protected Shared Function FieldAccessMayRequireTracking(fieldAccess As BoundFieldAccess) As Boolean
             If fieldAccess.FieldSymbol.IsShared Then
                 Return False
             End If
@@ -2506,7 +2506,12 @@ EnteredRegion:
             Return Nothing
         End Function
 
-        Public Overrides Function VisitFieldOrPropertyInitializer(node As BoundFieldOrPropertyInitializer) As BoundNode
+        Public Overrides Function VisitFieldInitializer(node As BoundFieldInitializer) As BoundNode
+            VisitRvalue(node.InitialValue)
+            Return Nothing
+        End Function
+
+        Public Overrides Function VisitPropertyInitializer(node As BoundPropertyInitializer) As BoundNode
             VisitRvalue(node.InitialValue)
             Return Nothing
         End Function
@@ -2603,7 +2608,7 @@ EnteredRegion:
             Return Nothing
         End Function
 
-        Public Overrides Function VisitEqualsValue(node As BoundEqualsValue) As BoundNode
+        Public Overrides Function VisitParameterEqualsValue(node As BoundParameterEqualsValue) As BoundNode
             VisitRvalue(node.Value)
             Return Nothing
         End Function

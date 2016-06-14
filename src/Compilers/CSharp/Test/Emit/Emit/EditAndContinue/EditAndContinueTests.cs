@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
@@ -186,7 +187,7 @@ namespace Microsoft.CodeAnalysis.CSharp.EditAndContinue.UnitTests
                     generation0,
                     ImmutableArray.Create(new SemanticEdit(SemanticEditKind.Update, method0, method1)));
 
-                var methods = diff1.TestData.Methods;
+                var methods = diff1.TestData.GetMethodsByName();
                 Assert.Equal(methods.Count, 1);
                 Assert.True(methods.ContainsKey("C.M2()"));
 
@@ -2952,7 +2953,8 @@ class C
         /// Unique ids should not conflict with ids
         /// from previous generation.
         /// </summary>
-        [Fact(Skip = "TODO")]
+        [WorkItem(9847, "https://github.com/dotnet/roslyn/issues/9847")]
+        [Fact(Skip = "https://github.com/dotnet/roslyn/issues/9847")]
         public void UniqueIds()
         {
             var source0 =
@@ -4205,7 +4207,7 @@ namespace M
             var compilation0 = CreateCompilationWithMscorlib(source0, options: TestOptions.DebugDll);
             var compilation1 = compilation0.WithSource(source1);
 
-            var moduleMetadata0 = ((AssemblyMetadata)metadata0.GetMetadata()).GetModules()[0];
+            var moduleMetadata0 = ((AssemblyMetadata)metadata0.GetMetadataNoCopy()).GetModules()[0];
             var method0 = compilation0.GetMember<MethodSymbol>("C.F");
             var generation0 = EmitBaseline.CreateInitialBaseline(moduleMetadata0, m => default(EditAndContinueMethodDebugInformation));
 
@@ -5334,7 +5336,8 @@ class C
         /// Should not re-use locals if the method metadata
         /// signature is unsupported.
         /// </summary>
-        [Fact(Skip = "TODO")]
+        [WorkItem(9849, "https://github.com/dotnet/roslyn/issues/9849")]
+        [Fact(Skip = "https://github.com/dotnet/roslyn/issues/9849")]
         public void LocalType_UnsupportedSignatureContent()
         {
             // Equivalent to C#, but with extra local and required modifier on
@@ -5418,7 +5421,8 @@ class C
         /// <summary>
         /// Should not re-use locals with custom modifiers.
         /// </summary>
-        [Fact(Skip = "TODO")]
+        [WorkItem(9848, "https://github.com/dotnet/roslyn/issues/9848")]
+        [Fact(Skip = "https://github.com/dotnet/roslyn/issues/9848")]
         public void LocalType_CustomModifiers()
         {
             // Equivalent method signature to C#, but
@@ -5461,7 +5465,7 @@ class C
             var compilation0 = CreateCompilationWithMscorlib(source, options: TestOptions.DebugDll);
             var compilation1 = compilation0.WithSource(source);
 
-            var moduleMetadata0 = ((AssemblyMetadata)metadata0.GetMetadata()).GetModules()[0];
+            var moduleMetadata0 = ((AssemblyMetadata)metadata0.GetMetadataNoCopy()).GetModules()[0];
             var method0 = compilation0.GetMember<MethodSymbol>("C.F");
             var generation0 = EmitBaseline.CreateInitialBaseline(
                 moduleMetadata0,
@@ -6204,12 +6208,11 @@ class C
 ");
         }
 
-        [WorkItem(844472, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/844472")]
         [Fact]
         public void MethodSignatureWithNoPIAType()
         {
-            var sourcePIA =
-    @"using System;
+            var sourcePIA = @"
+using System;
 using System.Runtime.InteropServices;
 [assembly: ImportedFromTypeLib(""_.dll"")]
 [assembly: Guid(""35DB1A6B-D635-4320-A062-28D42920E2A3"")]
@@ -6218,55 +6221,96 @@ using System.Runtime.InteropServices;
 public interface I
 {
 }";
-            var source0 =
-@"class C
+            var source0 = MarkedSource(@"
+class C
 {
     static void M(I x)
     {
-        I y = null;
-        M(null);
+        System.Console.WriteLine(1);
     }
-}";
-            var source1 =
-@"class C
+}");
+            var source1 = MarkedSource(@"
+class C
 {
     static void M(I x)
     {
-        I y = null;
-        M(x);
+        System.Console.WriteLine(2);
     }
-}";
+}");
             var compilationPIA = CreateCompilationWithMscorlib(sourcePIA, options: TestOptions.DebugDll);
             var referencePIA = compilationPIA.EmitToImageReference(embedInteropTypes: true);
-            var compilation0 = CreateCompilationWithMscorlib(source0, options: TestOptions.DebugDll, references: new MetadataReference[] { referencePIA });
-            var compilation1 = compilation0.WithSource(source1);
+            var compilation0 = CreateCompilationWithMscorlib(source0.Tree, options: ComSafeDebugDll, references: new MetadataReference[] { referencePIA });
+            var compilation1 = compilation0.WithSource(source1.Tree);
 
-            var testData0 = new CompilationTestData();
-            var bytes0 = compilation0.EmitToArray(testData: testData0);
-            var methodData0 = testData0.GetMethodData("C.M");
-            using (var md0 = ModuleMetadata.CreateFromImage(bytes0))
-            {
-                var generation0 = EmitBaseline.CreateInitialBaseline(md0, methodData0.EncDebugInfoProvider());
-                var method0 = compilation0.GetMember<MethodSymbol>("C.M");
-                var method1 = compilation1.GetMember<MethodSymbol>("C.M");
-                var diff1 = compilation1.EmitDifference(
-                    generation0,
-                    ImmutableArray.Create(new SemanticEdit(SemanticEditKind.Update, method0, method1, GetEquivalentNodesMap(method1, method0), preserveLocalVariables: true)));
-                diff1.VerifyIL("C.M",
-@"{
-  // Code size       11 (0xb)
-  .maxstack  1
-  .locals init ([unchanged] V_0,
-  I V_1) //y
-  IL_0000:  nop
-  IL_0001:  ldnull
-  IL_0002:  stloc.1
-  IL_0003:  ldarg.0
-  IL_0004:  call       ""void C.M(I)""
-  IL_0009:  nop
-  IL_000a:  ret
+            var method0 = compilation0.GetMember<MethodSymbol>("C.M");
+            var method1 = compilation1.GetMember<MethodSymbol>("C.M");
+
+            var v0 = CompileAndVerify(compilation0);
+            var md0 = ModuleMetadata.CreateFromImage(v0.EmittedAssemblyData);
+            var generation0 = EmitBaseline.CreateInitialBaseline(md0, v0.CreateSymReader().GetEncMethodDebugInfo);
+
+            var diff1 = compilation1.EmitDifference(
+                generation0,
+                ImmutableArray.Create(new SemanticEdit(SemanticEditKind.Update, method0, method1, GetSyntaxMapFromMarkers(source0, source1), preserveLocalVariables: true)));
+
+            diff1.EmitResult.Diagnostics.Verify(
+                // error CS7096: Cannot continue since the edit includes a reference to an embedded type: 'I'.
+                Diagnostic(ErrorCode.ERR_EncNoPIAReference).WithArguments("I"));
+        }
+
+        [WorkItem(844472, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/844472")]
+        [Fact]
+        public void LocalSignatureWithNoPIAType()
+        {
+            var sourcePIA = @"
+using System;
+using System.Runtime.InteropServices;
+[assembly: ImportedFromTypeLib(""_.dll"")]
+[assembly: Guid(""35DB1A6B-D635-4320-A062-28D42920E2A3"")]
+[ComImport()]
+[Guid(""35DB1A6B-D635-4320-A062-28D42920E2A4"")]
+public interface I
+{
+}";
+            var source0 = MarkedSource(@"
+class C
+{
+    static void M(I x)
+    {
+        I <N:0>y = null</N:0>;
+        M(null);
+    }
 }");
-            }
+            var source1 = MarkedSource(@"
+class C
+{
+    static void M(I x)
+    {
+        I <N:0>y = null</N:0>;
+        M(x);
+    }
+}");
+            var compilationPIA = CreateCompilationWithMscorlib(sourcePIA, options: TestOptions.DebugDll);
+            var referencePIA = compilationPIA.EmitToImageReference(embedInteropTypes: true);
+            var compilation0 = CreateCompilationWithMscorlib(source0.Tree, options: ComSafeDebugDll, references: new MetadataReference[] { referencePIA });
+            var compilation1 = compilation0.WithSource(source1.Tree);
+
+            var method0 = compilation0.GetMember<MethodSymbol>("C.M");
+            var method1 = compilation1.GetMember<MethodSymbol>("C.M");
+
+            var v0 = CompileAndVerify(compilation0);
+            var md0 = ModuleMetadata.CreateFromImage(v0.EmittedAssemblyData);
+            var generation0 = EmitBaseline.CreateInitialBaseline(md0, v0.CreateSymReader().GetEncMethodDebugInfo);
+
+            var diff1 = compilation1.EmitDifference(
+                generation0,
+                ImmutableArray.Create(new SemanticEdit(SemanticEditKind.Update, method0, method1, GetSyntaxMapFromMarkers(source0, source1), preserveLocalVariables: true)));
+
+            diff1.EmitResult.Diagnostics.Verify(
+                // (6,16): warning CS0219: The variable 'y' is assigned but its value is never used
+                Diagnostic(ErrorCode.WRN_UnreferencedVarAssg, "y").WithArguments("y"),
+                // error CS7096: Cannot continue since the edit includes a reference to an embedded type: 'I'.
+                Diagnostic(ErrorCode.ERR_EncNoPIAReference).WithArguments("I"));
         }
 
         /// <summary>
@@ -6344,7 +6388,7 @@ public struct S
             using (var md0 = ModuleMetadata.CreateFromImage(bytes0))
             {
                 var reader0 = md0.MetadataReader;
-                CheckNames(reader0, reader0.GetTypeDefNames(), "<Module>", "C`1", "IA", "IC", "S", "<>v");
+                CheckNames(reader0, reader0.GetTypeDefNames(), "<Module>", "C`1", "IA", "IC", "S", "<>x");
                 var generation0 = EmitBaseline.CreateInitialBaseline(md0, methodData0.EncDebugInfoProvider());
                 var method0 = compilation0.GetMember<MethodSymbol>("C.M1");
 
@@ -7038,7 +7082,7 @@ public class C
   .maxstack  2
   .locals init (System.Action V_0) //a
   IL_0000:  nop
-  IL_0001:  ldsfld     ""System.Action <>v.<Target>w""
+  IL_0001:  ldsfld     ""System.Action <>x.<Target>w""
   IL_0006:  dup
   IL_0007:  brtrue.s   IL_001c
   IL_0009:  pop
@@ -7046,7 +7090,7 @@ public class C
   IL_000b:  ldftn      ""void C.Target()""
   IL_0011:  newobj     ""System.Action..ctor(object, System.IntPtr)""
   IL_0016:  dup
-  IL_0017:  stsfld     ""System.Action <>v.<Target>w""
+  IL_0017:  stsfld     ""System.Action <>x.<Target>w""
   IL_001c:  stloc.0
   IL_001d:  ldloc.0
   IL_001e:  callvirt   ""void System.Action.Invoke()""
@@ -7069,7 +7113,7 @@ public class C
   .maxstack  2
   .locals init (System.Action V_0) //a
   IL_0000:  nop
-  IL_0001:  ldsfld     ""System.Action <>v#1.<Target>w""
+  IL_0001:  ldsfld     ""System.Action <>x#1.<Target>w""
   IL_0006:  dup
   IL_0007:  brtrue.s   IL_001c
   IL_0009:  pop
@@ -7077,7 +7121,7 @@ public class C
   IL_000b:  ldftn      ""void C.Target()""
   IL_0011:  newobj     ""System.Action..ctor(object, System.IntPtr)""
   IL_0016:  dup
-  IL_0017:  stsfld     ""System.Action <>v#1.<Target>w""
+  IL_0017:  stsfld     ""System.Action <>x#1.<Target>w""
   IL_001c:  stloc.0
   IL_001d:  ldloc.0
   IL_001e:  callvirt   ""void System.Action.Invoke()""
@@ -7102,7 +7146,7 @@ public class C
   .locals init (System.Action V_0, //a
                 System.Action V_1) //b
   IL_0000:  nop
-  IL_0001:  ldsfld     ""System.Action <>v#2.<Target>w""
+  IL_0001:  ldsfld     ""System.Action <>x#2.<Target>w""
   IL_0006:  dup
   IL_0007:  brtrue.s   IL_001c
   IL_0009:  pop
@@ -7110,12 +7154,12 @@ public class C
   IL_000b:  ldftn      ""void C.Target()""
   IL_0011:  newobj     ""System.Action..ctor(object, System.IntPtr)""
   IL_0016:  dup
-  IL_0017:  stsfld     ""System.Action <>v#2.<Target>w""
+  IL_0017:  stsfld     ""System.Action <>x#2.<Target>w""
   IL_001c:  stloc.0
   IL_001d:  ldloc.0
   IL_001e:  callvirt   ""void System.Action.Invoke()""
   IL_0023:  nop
-  IL_0024:  ldsfld     ""System.Action <>v#2.<Target>w""
+  IL_0024:  ldsfld     ""System.Action <>x#2.<Target>w""
   IL_0029:  dup
   IL_002a:  brtrue.s   IL_003f
   IL_002c:  pop
@@ -7123,7 +7167,7 @@ public class C
   IL_002e:  ldftn      ""void C.Target()""
   IL_0034:  newobj     ""System.Action..ctor(object, System.IntPtr)""
   IL_0039:  dup
-  IL_003a:  stsfld     ""System.Action <>v#2.<Target>w""
+  IL_003a:  stsfld     ""System.Action <>x#2.<Target>w""
   IL_003f:  stloc.1
   IL_0040:  ldloc.1
   IL_0041:  callvirt   ""void System.Action.Invoke()""
@@ -7146,7 +7190,7 @@ public class C
   .locals init (System.Action V_0, //a
                 System.Action V_1) //b
   IL_0000:  nop
-  IL_0001:  ldsfld     ""System.Action <>v#2.<Target>w""
+  IL_0001:  ldsfld     ""System.Action <>x#2.<Target>w""
   IL_0006:  dup
   IL_0007:  brtrue.s   IL_001c
   IL_0009:  pop
@@ -7154,12 +7198,12 @@ public class C
   IL_000b:  ldftn      ""void C.Target()""
   IL_0011:  newobj     ""System.Action..ctor(object, System.IntPtr)""
   IL_0016:  dup
-  IL_0017:  stsfld     ""System.Action <>v#2.<Target>w""
+  IL_0017:  stsfld     ""System.Action <>x#2.<Target>w""
   IL_001c:  stloc.0
   IL_001d:  ldloc.0
   IL_001e:  callvirt   ""void System.Action.Invoke()""
   IL_0023:  nop
-  IL_0024:  ldsfld     ""System.Action <>v#2.<Target1>w__1""
+  IL_0024:  ldsfld     ""System.Action <>x#2.<Target1>w__1""
   IL_0029:  dup
   IL_002a:  brtrue.s   IL_003f
   IL_002c:  pop
@@ -7167,7 +7211,7 @@ public class C
   IL_002e:  ldftn      ""void C.Target1()""
   IL_0034:  newobj     ""System.Action..ctor(object, System.IntPtr)""
   IL_0039:  dup
-  IL_003a:  stsfld     ""System.Action <>v#2.<Target1>w__1""
+  IL_003a:  stsfld     ""System.Action <>x#2.<Target1>w__1""
   IL_003f:  stloc.1
   IL_0040:  ldloc.1
   IL_0041:  callvirt   ""void System.Action.Invoke()""
@@ -7188,7 +7232,7 @@ public class C
   .maxstack  2
   .locals init (System.Action V_0) //s
   IL_0000:  nop
-  IL_0001:  ldsfld     ""System.Action <>v#3.<WriteLine>w""
+  IL_0001:  ldsfld     ""System.Action <>x#3.<WriteLine>w""
   IL_0006:  dup
   IL_0007:  brtrue.s   IL_001c
   IL_0009:  pop
@@ -7196,7 +7240,7 @@ public class C
   IL_000b:  ldftn      ""void System.Console.WriteLine()""
   IL_0011:  newobj     ""System.Action..ctor(object, System.IntPtr)""
   IL_0016:  dup
-  IL_0017:  stsfld     ""System.Action <>v#3.<WriteLine>w""
+  IL_0017:  stsfld     ""System.Action <>x#3.<WriteLine>w""
   IL_001c:  stloc.0
   IL_001d:  ret
 }
@@ -7208,13 +7252,13 @@ public class C
             var reader2b = diff2b.GetMetadata().Reader;
             var reader3 = diff3.GetMetadata().Reader;
 
-            CheckNames(reader0, reader0.GetTypeDefNames(), "<Module>", "<>v", "C");
-            CheckNames(new[] { reader0, reader1 }, reader1.GetTypeDefNames(), "<>v#1");
-            CheckNames(new[] { reader0, reader1, reader2a }, reader2a.GetTypeDefNames(), "<>v#2");
+            CheckNames(reader0, reader0.GetTypeDefNames(), "<Module>", "<>x", "C");
+            CheckNames(new[] { reader0, reader1 }, reader1.GetTypeDefNames(), "<>x#1");
+            CheckNames(new[] { reader0, reader1, reader2a }, reader2a.GetTypeDefNames(), "<>x#2");
             CheckNames(new[] { reader0, reader1, reader2a }, reader2a.GetMethodDefNames(), "F");
-            CheckNames(new[] { reader0, reader1, reader2b }, reader2b.GetTypeDefNames(), "<>v#2");
+            CheckNames(new[] { reader0, reader1, reader2b }, reader2b.GetTypeDefNames(), "<>x#2");
             CheckNames(new[] { reader0, reader1, reader2b }, reader2b.GetMethodDefNames(), "F", "Target1");
-            CheckNames(new[] { reader0, reader1, reader2b, reader3 }, reader3.GetTypeDefNames(), "<>v#3");
+            CheckNames(new[] { reader0, reader1, reader2b, reader3 }, reader3.GetTypeDefNames(), "<>x#3");
             CheckNames(new[] { reader0, reader1, reader2b, reader3 }, reader3.GetMethodDefNames(), "G");
         }
 
@@ -7247,6 +7291,100 @@ public class C
                 method0 = method1;
                 generation0 = diff1.NextGeneration;
             }
+        }
+
+        [WorkItem(187868, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/187868")]
+        [Fact]
+        public void PdbReadingErrors()
+        {
+            var source0 = MarkedSource(@"
+using System;
+
+class C
+{
+	static void F() 
+    {
+        <N:0>Console.WriteLine(1);</N:0>
+    }
+}");
+
+            var source1 = MarkedSource(@"
+using System;
+
+class C
+{
+	static void F() 
+    {
+        <N:0>Console.WriteLine(2);</N:0>
+    }
+}");
+            var compilation0 = CreateCompilationWithMscorlib(source0.Tree, new[] { SystemCoreRef }, options: TestOptions.DebugDll, assemblyName: "PdbReadingErrorsAssembly");
+            var compilation1 = compilation0.WithSource(source1.Tree);
+
+            var v0 = CompileAndVerify(compilation0);
+            var md0 = ModuleMetadata.CreateFromImage(v0.EmittedAssemblyData);
+
+            var f0 = compilation0.GetMember<MethodSymbol>("C.F");
+            var f1 = compilation1.GetMember<MethodSymbol>("C.F");
+
+            var generation0 = EmitBaseline.CreateInitialBaseline(md0, methodHandle =>
+            {
+                throw new InvalidDataException("Bad PDB!");
+            });
+
+            var diff1 = compilation1.EmitDifference(
+                generation0,
+                ImmutableArray.Create(new SemanticEdit(SemanticEditKind.Update, f0, f1, GetSyntaxMapFromMarkers(source0, source1), preserveLocalVariables: true)));
+
+            // TODO: better error code
+            diff1.EmitResult.Diagnostics.Verify(
+                // (6,14): error CS7038: Failed to emit module 'Unable to read debug information of method 'C.F()' (token 0x06000001) from assembly 'PdbReadingErrorsAssembly, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null''.
+                Diagnostic(ErrorCode.ERR_ModuleEmitFailure, "F").WithArguments("Unable to read debug information of method 'C.F()' (token 0x06000001) from assembly 'PdbReadingErrorsAssembly, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null'").WithLocation(6, 14));
+        }
+
+        [Fact]
+        public void PdbReadingErrors_PassThruExceptions()
+        {
+            var source0 = MarkedSource(@"
+using System;
+
+class C
+{
+	static void F() 
+    {
+        <N:0>Console.WriteLine(1);</N:0>
+    }
+}");
+
+            var source1 = MarkedSource(@"
+using System;
+
+class C
+{
+	static void F() 
+    {
+        <N:0>Console.WriteLine(2);</N:0>
+    }
+}");
+            var compilation0 = CreateCompilationWithMscorlib(source0.Tree, new[] { SystemCoreRef }, options: TestOptions.DebugDll, assemblyName: "PdbReadingErrorsAssembly");
+            var compilation1 = compilation0.WithSource(source1.Tree);
+
+            var v0 = CompileAndVerify(compilation0);
+            var md0 = ModuleMetadata.CreateFromImage(v0.EmittedAssemblyData);
+
+            var f0 = compilation0.GetMember<MethodSymbol>("C.F");
+            var f1 = compilation1.GetMember<MethodSymbol>("C.F");
+
+            var generation0 = EmitBaseline.CreateInitialBaseline(md0, methodHandle =>
+            {
+                throw new ArgumentOutOfRangeException();
+            });
+
+            // the compiler shound't swallow any exceptions but InvalidDataException
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                compilation1.EmitDifference(
+                    generation0,
+                    ImmutableArray.Create(new SemanticEdit(SemanticEditKind.Update, f0, f1, GetSyntaxMapFromMarkers(source0, source1), preserveLocalVariables: true))));
         }
     }
 }

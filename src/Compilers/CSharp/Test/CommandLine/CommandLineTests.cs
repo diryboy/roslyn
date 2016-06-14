@@ -26,13 +26,16 @@ using Xunit;
 
 using static Roslyn.Test.Utilities.SharedResourceHelpers;
 using static Microsoft.CodeAnalysis.CommonDiagnosticAnalyzers;
+using System.IO.MemoryMappedFiles;
+using System.Reflection.Metadata;
 
 namespace Microsoft.CodeAnalysis.CSharp.CommandLine.UnitTests
 {
     public class CommandLineTests : CSharpTestBase
     {
-        private static readonly string s_CSharpCompilerExecutable = typeof(Microsoft.CodeAnalysis.CSharp.CommandLine.Csc).Assembly.Location;
+        private static readonly string s_CSharpCompilerExecutable = typeof(Csc).GetTypeInfo().Assembly.Location;
         private static readonly string s_defaultSdkDirectory = RuntimeEnvironment.GetRuntimeDirectory();
+        private static readonly string s_compilerVersion = typeof(Csc).GetTypeInfo().Assembly.GetCustomAttribute<AssemblyFileVersionAttribute>().Version;
 
         private readonly string _baseDirectory = TempRoot.Root;
 
@@ -224,8 +227,7 @@ d.cs
                 },
                 recursivePatterns: new Dictionary<string, string[]>()
                 {
-                    // TODO (tomat): Fix PathUtilities.GetDirectoryName to strip trailing \ and then the key should be @"C:\temp\a|*.cs"
-                    { @"C:\temp\a\|*.cs", new[] { @"a\x.cs", @"a\b\b.cs", @"a\c.cs" } },
+                    { @"C:\temp\a|*.cs", new[] { @"a\x.cs", @"a\b\b.cs", @"a\c.cs" } },
                 });
 
             var args = parser.Parse(new[] { @"*.cs", @"/recurse:a\*.cs" }, @"C:\temp", s_defaultSdkDirectory);
@@ -966,6 +968,111 @@ d.cs
         }
 
         [Fact]
+        public void Target_SimpleTestsNoSource()
+        {
+            var parsedArgs = DefaultParse(new[] { "/target:exe"}, _baseDirectory);
+            parsedArgs.Errors.Verify(
+                // warning CS2008: No source files specified.
+                Diagnostic(ErrorCode.WRN_NoSources).WithLocation(1, 1),
+                // error CS1562: Outputs without source must have the /out option specified
+                Diagnostic(ErrorCode.ERR_OutputNeedsName).WithLocation(1, 1) );
+            Assert.Equal(OutputKind.ConsoleApplication, parsedArgs.CompilationOptions.OutputKind);
+
+            parsedArgs = DefaultParse(new[] { "/t:module"}, _baseDirectory);
+            parsedArgs.Errors.Verify(
+                // warning CS2008: No source files specified.
+                Diagnostic(ErrorCode.WRN_NoSources).WithLocation(1, 1),
+                // error CS1562: Outputs without source must have the /out option specified
+                Diagnostic(ErrorCode.ERR_OutputNeedsName).WithLocation(1, 1) );
+            Assert.Equal(OutputKind.NetModule, parsedArgs.CompilationOptions.OutputKind);
+
+            parsedArgs = DefaultParse(new[] { "/target:library"}, _baseDirectory);
+            parsedArgs.Errors.Verify(
+                // warning CS2008: No source files specified.
+                Diagnostic(ErrorCode.WRN_NoSources).WithLocation(1, 1),
+                // error CS1562: Outputs without source must have the /out option specified
+                Diagnostic(ErrorCode.ERR_OutputNeedsName).WithLocation(1, 1) );
+            Assert.Equal(OutputKind.DynamicallyLinkedLibrary, parsedArgs.CompilationOptions.OutputKind);
+
+            parsedArgs = DefaultParse(new[] { "/TARGET:winexe"}, _baseDirectory);
+            parsedArgs.Errors.Verify(
+                // warning CS2008: No source files specified.
+                Diagnostic(ErrorCode.WRN_NoSources).WithLocation(1, 1),
+                // error CS1562: Outputs without source must have the /out option specified
+                Diagnostic(ErrorCode.ERR_OutputNeedsName).WithLocation(1, 1) );
+            Assert.Equal(OutputKind.WindowsApplication, parsedArgs.CompilationOptions.OutputKind);
+
+            parsedArgs = DefaultParse(new[] { "/target:appcontainerexe"}, _baseDirectory);
+            parsedArgs.Errors.Verify(
+                // warning CS2008: No source files specified.
+                Diagnostic(ErrorCode.WRN_NoSources).WithLocation(1, 1),
+                // error CS1562: Outputs without source must have the /out option specified
+                Diagnostic(ErrorCode.ERR_OutputNeedsName).WithLocation(1, 1) );
+            Assert.Equal(OutputKind.WindowsRuntimeApplication, parsedArgs.CompilationOptions.OutputKind);
+
+            parsedArgs = DefaultParse(new[] { "/target:winmdobj"}, _baseDirectory);
+            parsedArgs.Errors.Verify(
+                // warning CS2008: No source files specified.
+                Diagnostic(ErrorCode.WRN_NoSources).WithLocation(1, 1),
+                // error CS1562: Outputs without source must have the /out option specified
+                Diagnostic(ErrorCode.ERR_OutputNeedsName).WithLocation(1, 1) );
+            Assert.Equal(OutputKind.WindowsRuntimeMetadata, parsedArgs.CompilationOptions.OutputKind);
+
+            parsedArgs = DefaultParse(new[] { "/target:winexe", "/T:exe", "/target:module"}, _baseDirectory);
+            parsedArgs.Errors.Verify(
+                // warning CS2008: No source files specified.
+                Diagnostic(ErrorCode.WRN_NoSources).WithLocation(1, 1),
+                // error CS1562: Outputs without source must have the /out option specified
+                Diagnostic(ErrorCode.ERR_OutputNeedsName).WithLocation(1, 1) );
+            Assert.Equal(OutputKind.NetModule, parsedArgs.CompilationOptions.OutputKind);
+
+            parsedArgs = DefaultParse(new[] { "/t"}, _baseDirectory);
+            parsedArgs.Errors.Verify(
+                // error CS2007: Unrecognized option: '/t'
+                Diagnostic(ErrorCode.ERR_BadSwitch).WithArguments("/t").WithLocation(1, 1),
+                // warning CS2008: No source files specified.
+                Diagnostic(ErrorCode.WRN_NoSources).WithLocation(1, 1),
+                // error CS1562: Outputs without source must have the /out option specified
+                Diagnostic(ErrorCode.ERR_OutputNeedsName).WithLocation(1, 1) );
+
+            parsedArgs = DefaultParse(new[] { "/target:"}, _baseDirectory);
+            parsedArgs.Errors.Verify(
+                // error CS2019: Invalid target type for /target: must specify 'exe', 'winexe', 'library', or 'module'
+                Diagnostic(ErrorCode.FTL_InvalidTarget).WithLocation(1, 1),
+                // warning CS2008: No source files specified.
+                Diagnostic(ErrorCode.WRN_NoSources).WithLocation(1, 1),
+                // error CS1562: Outputs without source must have the /out option specified
+                Diagnostic(ErrorCode.ERR_OutputNeedsName).WithLocation(1, 1));
+
+            parsedArgs = DefaultParse(new[] { "/target:xyz"}, _baseDirectory);
+            parsedArgs.Errors.Verify(    
+                // error CS2019: Invalid target type for /target: must specify 'exe', 'winexe', 'library', or 'module'
+                Diagnostic(ErrorCode.FTL_InvalidTarget).WithLocation(1, 1),
+                // warning CS2008: No source files specified.
+                Diagnostic(ErrorCode.WRN_NoSources).WithLocation(1, 1),
+                // error CS1562: Outputs without source must have the /out option specified
+                Diagnostic(ErrorCode.ERR_OutputNeedsName).WithLocation(1, 1));
+
+            parsedArgs = DefaultParse(new[] { "/T+"}, _baseDirectory);
+            parsedArgs.Errors.Verify(    
+                // error CS2007: Unrecognized option: '/T+'
+                Diagnostic(ErrorCode.ERR_BadSwitch).WithArguments("/T+").WithLocation(1, 1),
+                // warning CS2008: No source files specified.
+                Diagnostic(ErrorCode.WRN_NoSources).WithLocation(1, 1),
+                // error CS1562: Outputs without source must have the /out option specified
+                Diagnostic(ErrorCode.ERR_OutputNeedsName).WithLocation(1, 1));
+
+            parsedArgs = DefaultParse(new[] { "/TARGET-:"}, _baseDirectory);
+            parsedArgs.Errors.Verify(
+                // error CS2007: Unrecognized option: '/TARGET-:'
+                Diagnostic(ErrorCode.ERR_BadSwitch).WithArguments("/TARGET-:").WithLocation(1, 1),
+                // warning CS2008: No source files specified.
+                Diagnostic(ErrorCode.WRN_NoSources).WithLocation(1, 1),
+                // error CS1562: Outputs without source must have the /out option specified
+                Diagnostic(ErrorCode.ERR_OutputNeedsName).WithLocation(1, 1));
+        }
+
+        [Fact]
         public void ModuleManifest()
         {
             CSharpCommandLineArguments args = DefaultParse(new[] { "/win32manifest:blah", "/target:module", "a.cs" }, _baseDirectory);
@@ -1062,7 +1169,7 @@ d.cs
         [Fact]
         public void LangVersion()
         {
-            const LanguageVersion DefaultVersion = LanguageVersion.CSharp6;
+            const LanguageVersion DefaultVersion = LanguageVersion.CSharp7;
 
             var parsedArgs = DefaultParse(new[] { "/langversion:1", "a.cs" }, _baseDirectory);
             parsedArgs.Errors.Verify();
@@ -1087,6 +1194,22 @@ d.cs
             parsedArgs = DefaultParse(new[] { "/langversion:6", "a.cs" }, _baseDirectory);
             parsedArgs.Errors.Verify();
             Assert.Equal(LanguageVersion.CSharp6, parsedArgs.ParseOptions.LanguageVersion);
+
+            parsedArgs = DefaultParse(new[] { "/langversion:6", "/langversion:7", "a.cs" }, _baseDirectory);
+            parsedArgs.Errors.Verify();
+            Assert.Equal(LanguageVersion.CSharp7, parsedArgs.ParseOptions.LanguageVersion);
+
+            parsedArgs = DefaultParse(new[] { "/langversion:7", "/langversion:6", "a.cs" }, _baseDirectory);
+            parsedArgs.Errors.Verify();
+            Assert.Equal(LanguageVersion.CSharp6, parsedArgs.ParseOptions.LanguageVersion);
+
+            parsedArgs = DefaultParse(new[] { "/langversion:7", "/langversion:1", "a.cs" }, _baseDirectory);
+            parsedArgs.Errors.Verify();
+            Assert.Equal(LanguageVersion.CSharp1, parsedArgs.ParseOptions.LanguageVersion);
+
+            parsedArgs = DefaultParse(new[] { "/langversion:7", "a.cs" }, _baseDirectory);
+            parsedArgs.Errors.Verify();
+            Assert.Equal(LanguageVersion.CSharp7, parsedArgs.ParseOptions.LanguageVersion);
 
             parsedArgs = DefaultParse(new[] { "/langversion:default", "a.cs" }, _baseDirectory);
             parsedArgs.Errors.Verify();
@@ -1121,6 +1244,11 @@ d.cs
 
             // override value with default
             parsedArgs = DefaultParse(new[] { "/langversion:6", "/langversion:default", "a.cs" }, _baseDirectory);
+            Assert.Equal(DefaultVersion, parsedArgs.ParseOptions.LanguageVersion);
+            parsedArgs.Errors.Verify();
+
+            // override value with default
+            parsedArgs = DefaultParse(new[] { "/langversion:7", "/langversion:default", "a.cs" }, _baseDirectory);
             parsedArgs.Errors.Verify();
             Assert.Equal(DefaultVersion, parsedArgs.ParseOptions.LanguageVersion);
 
@@ -1140,8 +1268,13 @@ d.cs
 
             parsedArgs = DefaultParse(new[] { "/langversion:0", "/langversion:7", "a.cs" }, _baseDirectory);
             parsedArgs.Errors.Verify(
+                Diagnostic(ErrorCode.ERR_BadCompatMode).WithArguments("0"));
+            Assert.Equal(DefaultVersion, parsedArgs.ParseOptions.LanguageVersion);
+
+            parsedArgs = DefaultParse(new[] { "/langversion:0", "/langversion:8", "a.cs" }, _baseDirectory);
+            parsedArgs.Errors.Verify(
                 Diagnostic(ErrorCode.ERR_BadCompatMode).WithArguments("0"),
-                Diagnostic(ErrorCode.ERR_BadCompatMode).WithArguments("7"));
+                Diagnostic(ErrorCode.ERR_BadCompatMode).WithArguments("8"));
             Assert.Equal(DefaultVersion, parsedArgs.ParseOptions.LanguageVersion);
 
             parsedArgs = DefaultParse(new[] { "/langversion:0", "/langversion:1000", "a.cs" }, _baseDirectory);
@@ -1488,7 +1621,7 @@ d.cs
         [Fact]
         public void Deterministic()
         {
-            var parsedArgs = DefaultParse(new [] { "a.cs" }, _baseDirectory);
+            var parsedArgs = DefaultParse(new[] { "a.cs" }, _baseDirectory);
             parsedArgs.Errors.Verify();
             Assert.Equal(false, parsedArgs.CompilationOptions.Deterministic);
 
@@ -2837,7 +2970,7 @@ C:\*.cs(100,7): error CS0103: The name 'Foo' does not exist in the current conte
             var srcFile = Temp.CreateFile().WriteAllText(@"class A { static void Main(string[] args) { } }");
             var srcDirectory = Path.GetDirectoryName(srcFile.Path);
             string root = Path.GetPathRoot(srcDirectory); // Make sure we pick a drive that exists and is plugged in to avoid 'Drive not ready'
-            
+
             var outWriter = new StringWriter(CultureInfo.InvariantCulture);
             var exitCode = new MockCSharpCompiler(null, srcDirectory,
                 new[] { "/nologo", "/preferreduilang:en",
@@ -3150,7 +3283,7 @@ C:\*.cs(100,7): error CS0103: The name 'Foo' does not exist in the current conte
             var lib3 = dir.CreateDirectory("lib3");
 
             var parsedArgs = DefaultParse(new[] { @"/lib:lib1", @"/libpath:lib2", @"/libpaths:lib3", "a.cs" }, dir.Path);
-            AssertEx.Equal(new[] 
+            AssertEx.Equal(new[]
             {
                 s_defaultSdkDirectory,
                 lib1.Path,
@@ -3621,6 +3754,15 @@ C:\*.cs(100,7): error CS0103: The name 'Foo' does not exist in the current conte
                 Diagnostic(ErrorCode.ERR_BadSwitch).WithArguments("/publicsign:-").WithLocation(1, 1));
 
             Assert.False(parsedArgs.CompilationOptions.PublicSign);
+        }
+
+        [WorkItem(8360, "https://github.com/dotnet/roslyn/issues/8360")]
+        [Fact]
+        public void PublicSign_KeyFileRelativePath()
+        {
+            var parsedArgs = DefaultParse(new[] { "/publicsign", "/keyfile:test.snk", "a.cs" }, _baseDirectory);
+            parsedArgs.Errors.Verify();
+            Assert.Equal(Path.Combine(_baseDirectory, "test.snk"), parsedArgs.CompilationOptions.CryptoKeyFile);
         }
 
         [WorkItem(546301, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/546301")]
@@ -5643,7 +5785,7 @@ public class C
         [Fact, WorkItem(530359, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/530359")]
         public void NoStdLib02()
         {
-#region "source"
+            #region "source"
             var source = @"
 // <Title>A collection initializer can be declared with a user-defined IEnumerable that is declared in a user-defined System.Collections</Title>
 using System.Collections;
@@ -5762,7 +5904,7 @@ namespace System
     }
 }
 ";
-#endregion
+            #endregion
 
             var src = Temp.CreateFile("NoStdLib02.cs");
             src.WriteAllText(source + mslib);
@@ -6368,6 +6510,169 @@ class Program3
             }
         }
 
+        /// <summary>
+        /// When the output file is open with <see cref="FileShare.Read"/> | <see cref="FileShare.Delete"/>
+        /// the compiler should delete the file to unblock build while allowing the reader to continue 
+        /// reading the previous snapshot of the file content.
+        /// 
+        /// On Windows we can read the original data directly from the stream withotu creating a memory map. 
+        /// </summary>
+        [ConditionalFact(typeof(WindowsOnly))]
+        public void FileShareDeleteCompatibility_Windows()
+        {
+            var dir = Temp.CreateDirectory();
+            var libSrc = dir.CreateFile("Lib.cs").WriteAllText("class C { }");
+            var libDll = dir.CreateFile("Lib.dll").WriteAllText("DLL");
+            var libPdb = dir.CreateFile("Lib.pdb").WriteAllText("PDB");
+
+            var fsDll = new FileStream(libDll.Path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
+            var fsPdb = new FileStream(libPdb.Path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
+
+            var outWriter = new StringWriter(CultureInfo.InvariantCulture);
+            int exitCode = new MockCSharpCompiler(null, dir.Path, new[] { "/target:library", "/debug:full", libSrc.Path }).Run(outWriter);
+            if (exitCode != 0)
+            {
+                AssertEx.AssertEqualToleratingWhitespaceDifferences("", outWriter.ToString());
+            }
+
+            Assert.Equal(0, exitCode);
+
+            AssertEx.Equal(new byte[] { 0x4D, 0x5A }, ReadBytes(libDll.Path, 2));
+            AssertEx.Equal(new[] { (byte)'D', (byte)'L', (byte)'L' }, ReadBytes(fsDll, 3));
+
+            AssertEx.Equal(new byte[] { 0x4D, 0x69 }, ReadBytes(libPdb.Path, 2));
+            AssertEx.Equal(new[] { (byte)'P', (byte)'D', (byte)'B' }, ReadBytes(fsPdb, 3));
+
+            fsDll.Dispose();
+            fsPdb.Dispose();
+
+            AssertEx.Equal(new[] { "Lib.cs", "Lib.dll", "Lib.pdb" }, Directory.GetFiles(dir.Path).Select(p => Path.GetFileName(p)).Order());
+        }
+
+        /// <summary>
+        /// On Linux/Mac <see cref="FileShare.Delete"/> on its own doesn't do anything. 
+        /// We need to create the actual memory map. This works on Windows as well.
+        /// </summary>
+        [ConditionalFact(typeof(WindowsOnly)), WorkItem(8896, "https://github.com/dotnet/roslyn/issues/8896")]
+        public void FileShareDeleteCompatibility_Xplat()
+        {
+            var bytes = TestResources.MetadataTests.InterfaceAndClass.CSClasses01;
+            var mvid = ReadMvid(new MemoryStream(bytes));
+
+            var dir = Temp.CreateDirectory();
+            var libSrc = dir.CreateFile("Lib.cs").WriteAllText("class C { }");
+            var libDll = dir.CreateFile("Lib.dll").WriteAllBytes(bytes);
+            var libPdb = dir.CreateFile("Lib.pdb").WriteAllBytes(bytes);
+
+            var fsDll = new FileStream(libDll.Path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
+            var fsPdb = new FileStream(libPdb.Path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
+
+            var peDll = new PEReader(fsDll);
+            var pePdb = new PEReader(fsPdb);
+
+            // creates memory map view:
+            var imageDll = peDll.GetEntireImage();
+            var imagePdb = pePdb.GetEntireImage();
+
+            var output = ProcessUtilities.RunAndGetOutput(s_CSharpCompilerExecutable, $"/target:library /debug:portable {libSrc.Path}", startFolder: dir.ToString());
+            AssertEx.AssertEqualToleratingWhitespaceDifferences($@"
+Microsoft (R) Visual C# Compiler version {s_compilerVersion}
+Copyright (C) Microsoft Corporation. All rights reserved.", output);
+
+            // reading original content from the memory map: 
+            Assert.Equal(mvid, ReadMvid(new MemoryStream(imageDll.GetContent().ToArray())));
+            Assert.Equal(mvid, ReadMvid(new MemoryStream(imagePdb.GetContent().ToArray())));
+            
+            // reading original content directly from the streams: 
+            fsDll.Position = 0;
+            fsPdb.Position = 0;
+            Assert.Equal(mvid, ReadMvid(fsDll));
+            Assert.Equal(mvid, ReadMvid(fsPdb));
+
+            // reading new content from the file:
+            using (var fsNewDll = File.OpenRead(libDll.Path))
+            {
+                Assert.NotEqual(mvid, ReadMvid(fsNewDll));
+            }
+
+            // Portable PDB metadata signature:
+            AssertEx.Equal(new[] { (byte)'B', (byte)'S', (byte)'J', (byte)'B' }, ReadBytes(libPdb.Path, 4));
+
+            // dispose PEReaders (they dispose the underlying file streams)
+            peDll.Dispose();
+            pePdb.Dispose();
+
+            AssertEx.Equal(new[] { "Lib.cs", "Lib.dll", "Lib.pdb" }, Directory.GetFiles(dir.Path).Select(p => Path.GetFileName(p)).Order());
+
+            // files can be deleted now:
+            File.Delete(libSrc.Path);
+            File.Delete(libDll.Path);
+            File.Delete(libPdb.Path);
+
+            // directory can be deleted (should be empty):
+            Directory.Delete(dir.Path, recursive: false);
+        }
+
+        private static Guid ReadMvid(Stream stream)
+        {
+            using (var peReader = new PEReader(stream, PEStreamOptions.LeaveOpen))
+            {
+                var mdReader = peReader.GetMetadataReader();
+                return mdReader.GetGuid(mdReader.GetModuleDefinition().Mvid);
+            }
+        }
+
+        // Seems like File.SetAttributes(libDll.Path, FileAttributes.ReadOnly) doesn't restrict access to the file on Mac (Linux passes).
+        [ConditionalFact(typeof(WindowsOnly)), WorkItem(8939, "https://github.com/dotnet/roslyn/issues/8939")]
+        public void FileShareDeleteCompatibility_ReadOnlyFiles()
+        {
+            var dir = Temp.CreateDirectory();
+            var libSrc = dir.CreateFile("Lib.cs").WriteAllText("class C { }");
+            var libDll = dir.CreateFile("Lib.dll").WriteAllText("DLL");
+
+            File.SetAttributes(libDll.Path, FileAttributes.ReadOnly);
+
+            var fsDll = new FileStream(libDll.Path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete);
+
+            var outWriter = new StringWriter(CultureInfo.InvariantCulture);
+            int exitCode = new MockCSharpCompiler(null, dir.Path, new[] { "/target:library", libSrc.Path }).Run(outWriter);
+            Assert.Contains($"error CS2012: Cannot open '{libDll.Path}' for writing", outWriter.ToString());
+
+            AssertEx.Equal(new[] { (byte)'D', (byte)'L', (byte)'L' }, ReadBytes(libDll.Path, 3));
+            AssertEx.Equal(new[] { (byte)'D', (byte)'L', (byte)'L' }, ReadBytes(fsDll, 3));
+
+            fsDll.Dispose();
+
+            AssertEx.Equal(new[] { "Lib.cs", "Lib.dll" }, Directory.GetFiles(dir.Path).Select(p => Path.GetFileName(p)).Order());
+        }
+
+        [Fact]
+        public void FileShareDeleteCompatibility_ExistingDirectory()
+        {
+            var dir = Temp.CreateDirectory();
+            var libSrc = dir.CreateFile("Lib.cs").WriteAllText("class C { }");
+            var libDll = dir.CreateDirectory("Lib.dll");
+
+            var outWriter = new StringWriter(CultureInfo.InvariantCulture);
+            int exitCode = new MockCSharpCompiler(null, dir.Path, new[] { "/target:library", libSrc.Path }).Run(outWriter);
+            Assert.Contains($"error CS2012: Cannot open '{libDll.Path}' for writing", outWriter.ToString());
+        }
+
+        private byte[] ReadBytes(Stream stream, int count)
+        {
+            var buffer = new byte[count];
+            stream.Read(buffer, 0, count);
+            return buffer;
+        }
+
+        private byte[] ReadBytes(string path, int count)
+        {
+            using (var stream = File.OpenRead(path))
+            {
+                return ReadBytes(stream, count);
+            }
+        }
+
         [Fact]
         public void IOFailure_OpenOutputFile()
         {
@@ -6744,7 +7049,7 @@ public class C { }
 
             var outWriter = new StringWriter(CultureInfo.InvariantCulture);
             var csc = new MockCSharpCompiler(null, _baseDirectory, new[] { "/t:library", srcFile.Path },
-               analyzer: new AnalyzerThatThrowsInGetMessage());
+               analyzers: ImmutableArray.Create<DiagnosticAnalyzer>(new AnalyzerThatThrowsInGetMessage()));
 
             var exitCode = csc.Run(outWriter);
             Assert.Equal(0, exitCode);
@@ -6769,7 +7074,7 @@ public class C { }
 
             var outWriter = new StringWriter(CultureInfo.InvariantCulture);
             var csc = new MockCSharpCompiler(null, _baseDirectory, new[] { "/t:library", $"/warnaserror:{AnalyzerExecutor.AnalyzerExceptionDiagnosticId}", srcFile.Path },
-               analyzer: new AnalyzerThatThrowsInGetMessage());
+               analyzers: ImmutableArray.Create<DiagnosticAnalyzer>(new AnalyzerThatThrowsInGetMessage()));
 
             var exitCode = csc.Run(outWriter);
             Assert.NotEqual(0, exitCode);
@@ -6791,7 +7096,7 @@ public class C { }
 
             var outWriter = new StringWriter(CultureInfo.InvariantCulture);
             var csc = new MockCSharpCompiler(null, _baseDirectory, new[] { "/t:library", srcFile.Path },
-               analyzer: new AnalyzerReportingMisformattedDiagnostic());
+               analyzers: ImmutableArray.Create<DiagnosticAnalyzer>(new AnalyzerReportingMisformattedDiagnostic()));
 
             var exitCode = csc.Run(outWriter);
             Assert.Equal(0, exitCode);
@@ -7450,6 +7755,7 @@ using System.Diagnostics; // Unused.
             return output;
         }
 
+        [WorkItem(11368, "https://github.com/dotnet/roslyn/issues/11368")]
         [WorkItem(899050, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/899050")]
         [WorkItem(981677, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/981677")]
         [WorkItem(998069, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/998069")]
@@ -7493,13 +7799,13 @@ class C
             Assert.Contains("warning CS8032", output, StringComparison.Ordinal);
 
             // TEST: Verify that compiler warning CS0168 as well as custom warning diagnostic Warning01 can be promoted to errors via /warnaserror.
-            // Promoting compiler warning CS0168 to an error causes us to no longer report any custom warning diagnostics as errors (Bug 998069).
-            output = VerifyOutput(dir, file, additionalFlags: new[] { "/warnaserror", "/nowarn:8032" }, expectedErrorCount: 1);
+            output = VerifyOutput(dir, file, additionalFlags: new[] { "/warnaserror", "/nowarn:8032" }, expectedErrorCount: 2);
+            Assert.Contains("a.cs(2,7): error Warning01: Throwing a diagnostic for types declared", output, StringComparison.Ordinal);
             Assert.Contains("a.cs(6,13): error CS0168: The variable 'i' is declared but never used", output, StringComparison.Ordinal);
 
             // TEST: Verify that compiler warning CS0168 as well as custom warning diagnostic Warning01 can be promoted to errors via /warnaserror+.
-            // Promoting compiler warning CS0168 to an error causes us to no longer report any custom warning diagnostics as errors (Bug 998069).
-            output = VerifyOutput(dir, file, additionalFlags: new[] { "/warnaserror+", "/nowarn:8032" }, expectedErrorCount: 1);
+            output = VerifyOutput(dir, file, additionalFlags: new[] { "/warnaserror+", "/nowarn:8032" }, expectedErrorCount: 2);
+            Assert.Contains("a.cs(2,7): error Warning01: Throwing a diagnostic for types declared", output, StringComparison.Ordinal);
             Assert.Contains("a.cs(6,13): error CS0168: The variable 'i' is declared but never used", output, StringComparison.Ordinal);
 
             // TEST: Verify that /warnaserror- keeps compiler warning CS0168 as well as custom warning diagnostic Warning01 as warnings.
@@ -7516,7 +7822,8 @@ class C
 
             // TEST: Verify that compiler warning CS0168 can be individually promoted to an error via /warnaserror+:.
             // This doesn't work correctly currently - promoting compiler warning CS0168 to an error causes us to no longer report any custom warning diagnostics as errors (Bug 998069).
-            output = VerifyOutput(dir, file, additionalFlags: new[] { "/warnaserror+:CS0168" }, expectedWarningCount: 1, expectedErrorCount: 1);
+            output = VerifyOutput(dir, file, additionalFlags: new[] { "/warnaserror+:CS0168" }, expectedWarningCount: 2, expectedErrorCount: 1);
+            Assert.Contains("a.cs(2,7): warning Warning01: Throwing a diagnostic for types declared", output, StringComparison.Ordinal);
             Assert.Contains("a.cs(6,13): error CS0168: The variable 'i' is declared but never used", output, StringComparison.Ordinal);
             Assert.Contains("warning CS8032", output, StringComparison.Ordinal);
 
@@ -7527,8 +7834,8 @@ class C
             Assert.Contains("warning CS8032", output, StringComparison.Ordinal);
 
             // TEST: Verify that custom warning diagnostic Warning01 as well as compiler warning CS0168 can be promoted to errors via /warnaserror:.
-            // This doesn't work currently - promoting CS0168 to an error causes us to no longer report any custom warning diagnostics as errors (Bug 998069).
-            output = VerifyOutput(dir, file, additionalFlags: new[] { "/warnaserror:CS0168,Warning01" }, expectedWarningCount: 1, expectedErrorCount: 1);
+            output = VerifyOutput(dir, file, additionalFlags: new[] { "/warnaserror:CS0168,Warning01" }, expectedWarningCount: 1, expectedErrorCount: 2);
+            Assert.Contains("a.cs(2,7): error Warning01: Throwing a diagnostic for types declared", output, StringComparison.Ordinal);
             Assert.Contains("a.cs(6,13): error CS0168: The variable 'i' is declared but never used", output, StringComparison.Ordinal);
             Assert.Contains("warning CS8032", output, StringComparison.Ordinal);
 
@@ -7989,32 +8296,32 @@ class C {
         [Fact]
         public void PathMapParser()
         {
-            var parsedArgs = DefaultParse(new [] { "/pathmap:", "a.cs" }, _baseDirectory);
+            var parsedArgs = DefaultParse(new[] { "/pathmap:", "a.cs" }, _baseDirectory);
             parsedArgs.Errors.Verify();
             Assert.Equal(ImmutableArray.Create<KeyValuePair<string, string>>(), parsedArgs.PathMap);
 
-            parsedArgs = DefaultParse(new [] { "/pathmap:K1=V1", "a.cs" }, _baseDirectory);
+            parsedArgs = DefaultParse(new[] { "/pathmap:K1=V1", "a.cs" }, _baseDirectory);
             parsedArgs.Errors.Verify();
             Assert.Equal(KeyValuePair.Create("K1", "V1"), parsedArgs.PathMap[0]);
 
-            parsedArgs = DefaultParse(new [] { "/pathmap:K1=V1,K2=V2", "a.cs" }, _baseDirectory);
+            parsedArgs = DefaultParse(new[] { "/pathmap:K1=V1,K2=V2", "a.cs" }, _baseDirectory);
             parsedArgs.Errors.Verify();
             Assert.Equal(KeyValuePair.Create("K1", "V1"), parsedArgs.PathMap[0]);
             Assert.Equal(KeyValuePair.Create("K2", "V2"), parsedArgs.PathMap[1]);
 
-            parsedArgs = DefaultParse(new [] { "/pathmap:,,,", "a.cs" }, _baseDirectory);
+            parsedArgs = DefaultParse(new[] { "/pathmap:,,,", "a.cs" }, _baseDirectory);
             Assert.Equal(4, parsedArgs.Errors.Count());
             Assert.Equal((int)ErrorCode.ERR_InvalidPathMap, parsedArgs.Errors[0].Code);
             Assert.Equal((int)ErrorCode.ERR_InvalidPathMap, parsedArgs.Errors[1].Code);
             Assert.Equal((int)ErrorCode.ERR_InvalidPathMap, parsedArgs.Errors[2].Code);
             Assert.Equal((int)ErrorCode.ERR_InvalidPathMap, parsedArgs.Errors[3].Code);
 
-            parsedArgs = DefaultParse(new [] { "/pathmap:k=,=v", "a.cs" }, _baseDirectory);
+            parsedArgs = DefaultParse(new[] { "/pathmap:k=,=v", "a.cs" }, _baseDirectory);
             Assert.Equal(2, parsedArgs.Errors.Count());
             Assert.Equal((int)ErrorCode.ERR_InvalidPathMap, parsedArgs.Errors[0].Code);
             Assert.Equal((int)ErrorCode.ERR_InvalidPathMap, parsedArgs.Errors[1].Code);
 
-            parsedArgs = DefaultParse(new [] { "/pathmap:k=v=bad", "a.cs" }, _baseDirectory);
+            parsedArgs = DefaultParse(new[] { "/pathmap:k=v=bad", "a.cs" }, _baseDirectory);
             Assert.Equal(1, parsedArgs.Errors.Count());
             Assert.Equal((int)ErrorCode.ERR_InvalidPathMap, parsedArgs.Errors[0].Code);
         }

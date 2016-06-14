@@ -175,7 +175,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
             var fullSpan = tree.GetRoot(cancellationToken).FullSpan;
             var declarationInfos = new List<DeclarationInfo>();
             model.ComputeDeclarationsInSpan(fullSpan, getSymbol: true, builder: declarationInfos, cancellationToken: cancellationToken);
-            return declarationInfos.Select(declInfo => declInfo.DeclaredSymbol).WhereNotNull();
+            return declarationInfos.Select(declInfo => declInfo.DeclaredSymbol).Distinct().WhereNotNull();
         }
 
         private static ImmutableArray<CompilationEvent> CreateCompilationEventsForTree(IEnumerable<ISymbol> declaredSymbols, SyntaxTree tree, Compilation compilation)
@@ -234,6 +234,7 @@ namespace Microsoft.CodeAnalysis.Diagnostics
             AddToEventsMap_NoLock(compilationEvents, filterTreeOpt);
 
             // Mark the events for analysis for each analyzer.
+            ArrayBuilder<ISymbol> newPartialSymbols = null;
             Debug.Assert(_pooledEventsWithAnyActionsSet.Count == 0);
             foreach (var kvp in _analyzerStateMap)
             {
@@ -248,11 +249,18 @@ namespace Microsoft.CodeAnalysis.Diagnostics
                         _pooledEventsWithAnyActionsSet.Add(compilationEvent);
 
                         var symbolDeclaredEvent = compilationEvent as SymbolDeclaredCompilationEvent;
-                        if (symbolDeclaredEvent?.DeclaringSyntaxReferences.Length > 1 &&
-                            !_partialSymbolsWithGeneratedSourceEvents.Add(symbolDeclaredEvent.Symbol))
+                        if (symbolDeclaredEvent?.DeclaringSyntaxReferences.Length > 1)
                         {
-                            // already processed.
-                            continue;
+                            if (_partialSymbolsWithGeneratedSourceEvents.Contains(symbolDeclaredEvent.Symbol))
+                            {
+                                // already processed.
+                                continue;
+                            }
+                            else
+                            {
+                                newPartialSymbols = newPartialSymbols ?? ArrayBuilder<ISymbol>.GetInstance();
+                                newPartialSymbols.Add(symbolDeclaredEvent.Symbol);
+                            }
                         }
 
                         analyzerState.OnCompilationEventGenerated(compilationEvent, actionCounts);
@@ -267,6 +275,12 @@ namespace Microsoft.CodeAnalysis.Diagnostics
                     // Event has no relevant actions to execute, so mark it as complete.  
                     UpdateEventsMap_NoLock(compilationEvent, add: false);
                 }
+            }
+
+            if (newPartialSymbols != null)
+            {
+                _partialSymbolsWithGeneratedSourceEvents.AddAll(newPartialSymbols);
+                newPartialSymbols.Free();
             }
         }
 
@@ -396,9 +410,15 @@ namespace Microsoft.CodeAnalysis.Diagnostics
             }
         }
 
-        internal async Task<AnalyzerActionCounts> GetAnalyzerActionCountsAsync(DiagnosticAnalyzer analyzer, AnalyzerDriver driver, CancellationToken cancellationToken)
+        internal async Task<AnalyzerActionCounts> GetOrComputeAnalyzerActionCountsAsync(DiagnosticAnalyzer analyzer, AnalyzerDriver driver, CancellationToken cancellationToken)
         {
             await EnsureAnalyzerActionCountsInitializedAsync(driver, cancellationToken).ConfigureAwait(false);
+            return _lazyAnalyzerActionCountsMap[analyzer];
+        }
+
+        internal AnalyzerActionCounts GetAnalyzerActionCounts(DiagnosticAnalyzer analyzer)
+        {
+            Debug.Assert(_lazyAnalyzerActionCountsMap != null);
             return _lazyAnalyzerActionCountsMap[analyzer];
         }
 

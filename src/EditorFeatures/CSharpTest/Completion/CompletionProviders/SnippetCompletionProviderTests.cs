@@ -18,7 +18,7 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.UnitTests.Completion.CompletionPr
         {
         }
 
-        internal override CompletionListProvider CreateCompletionProvider()
+        internal override CompletionProvider CreateCompletionProvider()
         {
             return new SnippetCompletionProvider(new MockSnippetInfoService());
         }
@@ -125,11 +125,14 @@ class C
         [Fact, Trait(Traits.Feature, Traits.Features.Completion)]
         public async Task CommitWithEnterObeysOption()
         {
-            await VerifySendEnterThroughToEnterAsync("$$", "SnippetShortcu", sendThroughEnterEnabled: true, expected: false);
-            await VerifySendEnterThroughToEnterAsync("$$", "SnippetShortcut", sendThroughEnterEnabled: true, expected: true);
+            await VerifySendEnterThroughToEnterAsync("$$", "SnippetShortcu", sendThroughEnterOption: EnterKeyRule.Always, expected: true);
+            await VerifySendEnterThroughToEnterAsync("$$", "SnippetShortcut", sendThroughEnterOption: EnterKeyRule.Always, expected: true);
 
-            await VerifySendEnterThroughToEnterAsync("$$", "SnippetShortcu", sendThroughEnterEnabled: false, expected: false);
-            await VerifySendEnterThroughToEnterAsync("$$", "SnippetShortcut", sendThroughEnterEnabled: false, expected: false);
+            await VerifySendEnterThroughToEnterAsync("$$", "SnippetShortcu", sendThroughEnterOption: EnterKeyRule.AfterFullyTypedWord, expected: false);
+            await VerifySendEnterThroughToEnterAsync("$$", "SnippetShortcut", sendThroughEnterOption: EnterKeyRule.AfterFullyTypedWord, expected: true);
+
+            await VerifySendEnterThroughToEnterAsync("$$", "SnippetShortcu", sendThroughEnterOption: EnterKeyRule.Never, expected: false);
+            await VerifySendEnterThroughToEnterAsync("$$", "SnippetShortcut", sendThroughEnterOption: EnterKeyRule.Never, expected: false);
         }
 
         [Fact, Trait(Traits.Feature, Traits.Features.Completion)]
@@ -143,15 +146,15 @@ class C
 
         private class MockSnippetInfoService : ISnippetInfoService
         {
-            internal const string SnippetShortcut = "SnippetShortcut";
-            internal const string SnippetDescription = "SnippetDescription";
-            internal const string SnippetTitle = "SnippetTitle";
-            internal const string SnippetPath = "SnippetPath";
+            internal const string SnippetShortcut = nameof(SnippetShortcut);
+            internal const string SnippetDescription = nameof(SnippetDescription);
+            internal const string SnippetTitle = nameof(SnippetTitle);
+            internal const string SnippetPath = nameof(SnippetPath);
 
             internal const string PreProcessorSnippetShortcut = "#PreProcessorSnippetShortcut";
-            internal const string PreProcessorSnippetDescription = "PreProcessorSnippetDescription";
+            internal const string PreProcessorSnippetDescription = nameof(PreProcessorSnippetDescription);
             internal const string PreProcessorSnippetTitle = "#PreProcessorSnippetTitle";
-            internal const string PreProcessorSnippetPath = "PreProcessorSnippetPath";
+            internal const string PreProcessorSnippetPath = nameof(PreProcessorSnippetPath);
 
             public IEnumerable<SnippetInfo> GetSnippetsIfAvailable()
             {

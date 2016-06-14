@@ -98,7 +98,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 case SymbolKind.ArrayType:
                     {
                         var array = (ArrayTypeSymbol)type;
-                        return array.CustomModifiers.Any() || array.ElementType.HasCustomModifiers(flagNonDefaultArraySizesOrLowerBounds) || 
+                        return array.CustomModifiers.Any() || array.ElementType.HasCustomModifiers(flagNonDefaultArraySizesOrLowerBounds) ||
                                (flagNonDefaultArraySizesOrLowerBounds && !array.HasDefaultSizesAndLowerBounds);
                     }
                 case SymbolKind.PointerType:
@@ -175,7 +175,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
                 default:
                     // Enums and delegates know their own base types
                     // intrinsically (and do not include interface lists)
-                    // so there is not the possibility of a cycle.
+                    // so there is no possibility of a cycle.
                     return type.BaseTypeNoUseSiteDiagnostics;
             }
         }

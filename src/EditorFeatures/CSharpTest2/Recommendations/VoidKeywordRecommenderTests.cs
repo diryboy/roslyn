@@ -187,7 +187,7 @@ $$");
 using Foo;");
         }
 
-        [WpfFact(Skip = "528041"), Trait(Traits.Feature, Traits.Features.KeywordRecommending)]
+        [WpfFact(Skip = "https://github.com/dotnet/roslyn/issues/9880"), Trait(Traits.Feature, Traits.Features.KeywordRecommending)]
         public async Task TestNotBeforeUsing_Interactive()
         {
             await VerifyAbsenceAsync(SourceCodeKind.Script,
@@ -553,7 +553,7 @@ $$");
         {
             await VerifyKeywordAsync(
 @"class C {
-   unsafe operator int ++(C c) {
+   unsafe int operator ++(C c) {
      $$");
         }
 
@@ -631,14 +631,12 @@ $$");
     static void Method1(void* p1 = default($$");
         }
 
-        [WorkItem(18374)]
         [Fact, Trait(Traits.Feature, Traits.Features.KeywordRecommending)]
         public async Task TestAfterAsync()
         {
             await VerifyKeywordAsync(@"class c { async $$ }");
         }
 
-        [WorkItem(18374)]
         [Fact, Trait(Traits.Feature, Traits.Features.KeywordRecommending)]
         public async Task TestNotAfterAsyncAsType()
         {

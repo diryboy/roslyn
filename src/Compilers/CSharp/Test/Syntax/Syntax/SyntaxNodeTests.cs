@@ -8,6 +8,7 @@ using Microsoft.CodeAnalysis.Text;
 using Roslyn.Test.Utilities;
 using Xunit;
 using InternalSyntax = Microsoft.CodeAnalysis.CSharp.Syntax.InternalSyntax;
+using System.Text;
 
 namespace Microsoft.CodeAnalysis.CSharp.UnitTests
 {
@@ -1477,7 +1478,7 @@ class A { }
         }
 
         [WorkItem(536995, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/536995")]
-        [ClrOnlyFact]
+        [Fact]
         public void TestTextAndSpanWithTrivia1()
         {
             var tree = SyntaxFactory.ParseSyntaxTree(
@@ -1486,8 +1487,6 @@ class A { }
 }/*END*/");
             var rootNode = tree.GetCompilationUnitRoot();
 
-            Assert.Equal(53, rootNode.FullSpan.Length);
-            Assert.Equal(44, rootNode.Span.Length);
             Assert.Equal(rootNode.FullSpan.Length, rootNode.ToFullString().Length);
             Assert.Equal(rootNode.Span.Length, rootNode.ToString().Length);
             Assert.Equal(true, rootNode.ToString().Contains("/*END*/"));
@@ -1495,7 +1494,7 @@ class A { }
         }
 
         [WorkItem(536996, "http://vstfdevdiv:8080/DevDiv2/DevDiv/_workitems/edit/536996")]
-        [ClrOnlyFact]
+        [Fact]
         public void TestTextAndSpanWithTrivia2()
         {
             var tree = SyntaxFactory.ParseSyntaxTree(
@@ -1506,8 +1505,6 @@ namespace Microsoft.CSharp.Test
 /*END*/");
             var rootNode = tree.GetCompilationUnitRoot();
 
-            Assert.Equal(57, rootNode.FullSpan.Length);
-            Assert.Equal(46, rootNode.Span.Length);
             Assert.Equal(rootNode.FullSpan.Length, rootNode.ToFullString().Length);
             Assert.Equal(rootNode.Span.Length, rootNode.ToString().Length);
             Assert.Equal(true, rootNode.ToString().Contains("/*END*/"));
@@ -2326,7 +2323,7 @@ class C
             Assert.Equal(expectedText, text);
         }
 
-        [ClrOnlyFact]
+        [Fact]
         public void TestRemove_KeepUnbalancedDirectives()
         {
             var cu = SyntaxFactory.ParseCompilationUnit(@"
@@ -2339,7 +2336,7 @@ void M()
 {
 } // after
 #endregion
-}");
+}".NormalizeLineEndings());
 
             var expectedText = @"
 class C
@@ -2347,7 +2344,7 @@ class C
 
 #region Fred
 #endregion
-}";
+}".NormalizeLineEndings();
 
             var m = cu.DescendantNodes().OfType<MethodDeclarationSyntax>().FirstOrDefault();
             Assert.NotNull(m);
@@ -2359,7 +2356,7 @@ class C
             Assert.Equal(expectedText, text);
         }
 
-        [ClrOnlyFact]
+        [Fact]
         public void TestRemove_KeepDirectives()
         {
             var cu = SyntaxFactory.ParseCompilationUnit(@"
@@ -2374,7 +2371,7 @@ void M()
 #endif
 } // after
 #endregion
-}");
+}".NormalizeLineEndings());
 
             var expectedText = @"
 class C
@@ -2384,7 +2381,7 @@ class C
 #if true
 #endif
 #endregion
-}";
+}".NormalizeLineEndings();
 
             var m = cu.DescendantNodes().OfType<MethodDeclarationSyntax>().FirstOrDefault();
             Assert.NotNull(m);
@@ -2939,6 +2936,45 @@ namespace HelloWorld
             Assert.Equal(true, nodeOrToken.HasTrailingTrivia);
             Assert.Equal(1, nodeOrToken.GetTrailingTrivia().Count);
             Assert.Equal(2, nodeOrToken.GetTrailingTrivia().Span.Length); // zero-width elastic trivia
+        }
+
+
+        [WorkItem(6536, "https://github.com/dotnet/roslyn/issues/6536")]
+        [Fact]
+        public void TestFindTrivia_NoStackOverflowOnLargeExpression()
+        {
+            StringBuilder code = new StringBuilder();
+            code.Append(
+@"class Foo
+{
+    void Bar()
+    {
+        string test = ");
+            for (var i = 0; i < 3000; i++)
+            {
+                code.Append(@"""asdf"" + ");
+            }
+            code.Append(@"""last"";
+    }
+}");
+            var tree = SyntaxFactory.ParseSyntaxTree(code.ToString());
+            var position = 4000;
+            var trivia = tree.GetCompilationUnitRoot().FindTrivia(position);
+            // no stack overflow
+        }
+
+        [Fact, WorkItem(8625, "https://github.com/dotnet/roslyn/issues/8625")]
+        public void SyntaxNodeContains()
+        {
+            var text = "a + (b - (c * (d / e)))";
+            var expression = SyntaxFactory.ParseExpression(text);
+            var a = expression.DescendantNodes().OfType<IdentifierNameSyntax>().First(n => n.Identifier.Text == "a");
+            var e = expression.DescendantNodes().OfType<IdentifierNameSyntax>().First(n => n.Identifier.Text == "e");
+
+            var firstParens = e.FirstAncestorOrSelf<ExpressionSyntax>(n => n.Kind() == SyntaxKind.ParenthesizedExpression);
+
+            Assert.False(firstParens.Contains(a));  // fixing #8625 allows this to return quicker
+            Assert.True(firstParens.Contains(e));
         }
     }
 }

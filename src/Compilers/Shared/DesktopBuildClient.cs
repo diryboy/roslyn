@@ -60,11 +60,11 @@ namespace Microsoft.CodeAnalysis.CommandLine
         }
 
         protected override Task<BuildResponse> RunServerCompilation(
-            List<string> arguments, 
-            BuildPaths buildPaths, 
+            List<string> arguments,
+            BuildPaths buildPaths,
             string sessionKey,
-            string keepAlive, 
-            string libDirectory, 
+            string keepAlive,
+            string libDirectory,
             CancellationToken cancellationToken)
         {
             return RunServerCompilationCore(_language, arguments, buildPaths, sessionKey, keepAlive, libDirectory, TimeoutOverride, TryCreateServer, cancellationToken);
@@ -82,7 +82,7 @@ namespace Microsoft.CodeAnalysis.CommandLine
                 language,
                 arguments,
                 buildPaths,
-                GetPipeNameFromFileInfo(buildPaths.ClientDirectory),
+                GetPipeNameForPath(buildPaths.ClientDirectory),
                 keepAlive,
                 libEnvVariable,
                 timeoutOverride: null,
@@ -101,11 +101,10 @@ namespace Microsoft.CodeAnalysis.CommandLine
             Func<string, string, bool> tryCreateServerFunc,
             CancellationToken cancellationToken)
         {
-
             var clientDir = buildPaths.ClientDirectory;
             var timeoutNewProcess = timeoutOverride ?? TimeOutMsNewProcess;
             var timeoutExistingProcess = timeoutOverride ?? TimeOutMsExistingProcess;
-            var clientMutexName = BuildProtocolConstants.GetClientMutexName(pipeName);
+            var clientMutexName = GetClientMutexName(pipeName);
             bool holdsMutex;
             using (var clientMutex = new Mutex(initiallyOwned: true,
                                                name: clientMutexName,
@@ -121,7 +120,7 @@ namespace Microsoft.CodeAnalysis.CommandLine
 
                             if (!holdsMutex)
                             {
-                                return Task.FromResult<BuildResponse>(null);
+                                return Task.FromResult<BuildResponse>(new RejectedBuildResponse());
                             }
                         }
                         catch (AbandonedMutexException)
@@ -131,7 +130,7 @@ namespace Microsoft.CodeAnalysis.CommandLine
                     }
 
                     // Check for an already running server
-                    var serverMutexName = BuildProtocolConstants.GetServerMutexName(pipeName);
+                    var serverMutexName = GetServerMutexName(pipeName);
                     bool wasServerRunning = WasServerMutexOpen(serverMutexName);
                     var timeout = wasServerRunning ? timeoutExistingProcess : timeoutNewProcess;
 
@@ -164,20 +163,7 @@ namespace Microsoft.CodeAnalysis.CommandLine
                 }
             }
 
-            return Task.FromResult<BuildResponse>(null);
-        }
-
-        internal static bool WasServerMutexOpen(string mutexName)
-        {
-            Mutex mutex;
-            var open = Mutex.TryOpenExisting(mutexName, out mutex);
-            if (open)
-            {
-                mutex.Close();
-                return true;
-            }
-
-            return false;
+            return Task.FromResult<BuildResponse>(new RejectedBuildResponse());
         }
 
         /// <summary>
@@ -201,7 +187,7 @@ namespace Microsoft.CodeAnalysis.CommandLine
                 catch (Exception e)
                 {
                     LogException(e, "Error writing build request.");
-                    return null;
+                    return new RejectedBuildResponse();
                 }
 
                 // Wait for the compilation and a monitor to detect if the server disconnects
@@ -225,17 +211,18 @@ namespace Microsoft.CodeAnalysis.CommandLine
                     catch (Exception e)
                     {
                         LogException(e, "Error reading response");
-                        response = null;
+                        response = new RejectedBuildResponse();
                     }
                 }
                 else
                 {
                     Log("Server disconnect");
-                    response = null;
+                    response = new RejectedBuildResponse();
                 }
 
                 // Cancel whatever task is still around
                 serverCts.Cancel();
+                Debug.Assert(response != null);
                 return response;
             }
         }
@@ -252,9 +239,9 @@ namespace Microsoft.CodeAnalysis.CommandLine
             CancellationToken cancellationToken)
         {
             // Ignore this warning because the desktop projects don't target 4.6 yet
-#pragma warning disable RS0007 // Avoid zero-length array allocations.
+#pragma warning disable CA1825 // Avoid zero-length array allocations.
             var buffer = new byte[0];
-#pragma warning restore RS0007 // Avoid zero-length array allocations.
+#pragma warning restore CA1825 // Avoid zero-length array allocations.
 
             while (!cancellationToken.IsCancellationRequested && pipeStream.IsConnected)
             {
@@ -305,7 +292,11 @@ namespace Microsoft.CodeAnalysis.CommandLine
                 cancellationToken.ThrowIfCancellationRequested();
 
                 Log("Attempt to connect named pipe '{0}'", pipeName);
-                pipeStream.Connect(timeoutMs);
+                if (!TryConnectToNamedPipeWithSpinWait(pipeStream, timeoutMs, cancellationToken))
+                {
+                    Log($"Connecting to server timed out after {timeoutMs} ms");
+                    return null;
+                }
                 Log("Named pipe '{0}' connected", pipeName);
 
                 cancellationToken.ThrowIfCancellationRequested();
@@ -326,6 +317,57 @@ namespace Microsoft.CodeAnalysis.CommandLine
             }
         }
 
+        // Protected for testing
+        protected static bool TryConnectToNamedPipeWithSpinWait(NamedPipeClientStream pipeStream,
+                                                                int timeoutMs,
+                                                                CancellationToken cancellationToken)
+        {
+            Debug.Assert(timeoutMs == Timeout.Infinite || timeoutMs > 0);
+
+            // .NET 4.5 implementation of NamedPipeStream.Connect busy waits the entire time.
+            // Work around is to spin wait.
+            const int maxWaitIntervalMs = 50;
+            int elapsedMs = 0;
+            var sw = new SpinWait();
+            while (true)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                int waitTime;
+                if (timeoutMs == Timeout.Infinite)
+                {
+                    waitTime = maxWaitIntervalMs;
+                }
+                else
+                {
+                    waitTime = Math.Min(timeoutMs - elapsedMs, maxWaitIntervalMs);
+                    if (waitTime <= 0)
+                    {
+                        return false;
+                    }
+                }
+
+                try
+                {
+                    pipeStream.Connect(waitTime);
+                    break;
+                }
+                catch (Exception e) when (e is IOException || e is TimeoutException)
+                {
+                    // Ignore timeout
+
+                    // Note: IOException can also indicate timeout. From docs:
+                    // TimeoutException: Could not connect to the server within the
+                    //                   specified timeout period.
+                    // IOException: The server is connected to another client and the
+                    //              time-out period has expired.
+                }
+                unchecked { elapsedMs += waitTime; }
+                sw.SpinOnce();
+            }
+            return true;
+        }
+
         /// <summary>
         /// Create a new instance of the server process, returning true on success
         /// and false otherwise.
@@ -336,7 +378,7 @@ namespace Microsoft.CodeAnalysis.CommandLine
         }
 
         internal static bool TryCreateServerCore(string clientDir, string pipeName)
-        { 
+        {
             // The server should be in the same directory as the client
             string expectedPath = Path.Combine(clientDir, ServerName);
 
@@ -420,11 +462,28 @@ namespace Microsoft.CodeAnalysis.CommandLine
         /// </summary>
         protected override string GetSessionKey(BuildPaths buildPaths)
         {
-            return GetPipeNameFromFileInfo(buildPaths.ClientDirectory);
+            return GetPipeNameForPath(buildPaths.ClientDirectory);
         }
 
-        internal static string GetPipeNameFromFileInfo(string compilerExeDirectory)
+        internal static string GetPipeNameForPath(string compilerExeDirectory)
         { 
+            var basePipeName = GetBasePipeName(compilerExeDirectory);
+
+            // Prefix with username and elevation
+            var identity = WindowsIdentity.GetCurrent();
+            var principal = new WindowsPrincipal(identity);
+            var isAdmin = principal.IsInRole(WindowsBuiltInRole.Administrator);
+            var userName = Environment.UserName;
+            return $"{userName}.{isAdmin}.{basePipeName}";
+        }
+
+        internal static string GetBasePipeName(string compilerExeDirectory)
+        {
+            // Normalize away trailing slashes.  File APIs include / exclude this with no 
+            // discernable pattern.  Easiest to normalize it here vs. auditing every caller
+            // of this method.
+            compilerExeDirectory = compilerExeDirectory.TrimEnd(Path.DirectorySeparatorChar);
+
             string basePipeName;
             using (var sha = SHA256.Create())
             {
@@ -434,12 +493,30 @@ namespace Microsoft.CodeAnalysis.CommandLine
                     .Replace("=", string.Empty);
             }
 
-            // Prefix with username and elevation
-            var identity = WindowsIdentity.GetCurrent();
-            var principal = new WindowsPrincipal(identity);
-            var isAdmin = principal.IsInRole(WindowsBuiltInRole.Administrator);
-            var userName = Environment.UserName;
-            return $"{userName}.{isAdmin}.{basePipeName}";
+            return basePipeName;
+        }
+
+        internal static bool WasServerMutexOpen(string mutexName)
+        {
+            Mutex mutex;
+            var open = Mutex.TryOpenExisting(mutexName, out mutex);
+            if (open)
+            {
+                mutex.Dispose();
+                return true;
+            }
+
+            return false;
+        }
+
+        internal static string GetServerMutexName(string pipeName)
+        {
+            return $"{pipeName}.server";
+        }
+
+        internal static string GetClientMutexName(string pipeName)
+        {
+            return $"{pipeName}.client";
         }
     }
 }
