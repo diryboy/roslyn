@@ -79,8 +79,8 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
 
         internal static string MakeDelegateCacheContainerName(int index, int generation, string scopeIdOpt)
         {
-            Debug.Assert((char)GeneratedNameKind.DelegateCacheContainer == 'v');
-            return MakeScopedIndexedTypeName("v", null, index, generation, scopeIdOpt);
+            Debug.Assert((char)GeneratedNameKind.DelegateCacheContainer == 'x');
+            return MakeScopedIndexedTypeName("x", null, index, generation, scopeIdOpt);
         }
 
         internal static string MakeDelegateCacheContainerFieldName(string targetMethodName, int index)
