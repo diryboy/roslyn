@@ -8,7 +8,7 @@ namespace Microsoft.CodeAnalysis.CSharp.Symbols
     /// <summary>
     /// Represents a compiler generated field of given type and name.
     /// </summary>
-    internal sealed class SynthesizedFieldSymbol : SynthesizedFieldSymbolBase
+    internal class SynthesizedFieldSymbol : SynthesizedFieldSymbolBase
     {
         private readonly TypeSymbol _type;
 
