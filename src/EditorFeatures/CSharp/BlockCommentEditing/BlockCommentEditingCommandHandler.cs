@@ -160,7 +160,8 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.BlockCommentEditing
 
         private static bool IsCaretInsideBlockCommentSyntax(SnapshotPoint caretPosition)
         {
-            var document = caretPosition.Snapshot.GetOpenDocumentInCurrentContextWithChanges();
+            var snapshot = caretPosition.Snapshot;
+            var document = snapshot.GetOpenDocumentInCurrentContextWithChanges();
             if (document == null)
             {
                 return false;
@@ -170,8 +171,37 @@ namespace Microsoft.CodeAnalysis.Editor.CSharp.BlockCommentEditing
             var trivia = syntaxTree.FindTriviaAndAdjustForEndOfFile(caretPosition, CancellationToken.None);
 
             var isBlockComment = trivia.IsKind(SyntaxKind.MultiLineCommentTrivia) || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia);
-            var span = trivia.FullSpan;
-            return isBlockComment && span.Start < caretPosition && caretPosition < span.End;
+            if (isBlockComment)
+            {
+                var span = trivia.FullSpan;
+                if (span.Start < caretPosition && caretPosition < span.End)
+                {
+                    return true;
+                }
+
+                // trivia always ends on EOF, no matter closed or not
+                // so we need to handle
+                // /**/|EOF
+                // and
+                // /*  |EOF
+                if (caretPosition == snapshot.Length)
+                {
+                    if (!trivia.ContainsDiagnostics)
+                    {
+                        return false;
+                    }
+
+                    if (trivia.FullWidth() < 4) // "/**/".Length
+                    {
+                        return true;
+                    }
+
+                    var textBeforeCaret = snapshot.GetText((int)caretPosition - 2, 2);
+                    return textBeforeCaret != "*/";
+                }
+            }
+
+            return false;
         }
     }
 }
