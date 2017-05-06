@@ -20,6 +20,7 @@ namespace Microsoft.CodeAnalysis.CSharp
         private readonly SynthesizedSubmissionFields _previousSubmissionFields;
         private readonly bool _allowOmissionOfConditionalCalls;
         private readonly LoweredDynamicOperationFactory _dynamicFactory;
+
         private bool _sawLambdas;
         private bool _sawLocalFunctions;
         private bool _inExpressionLambda;
@@ -31,6 +32,13 @@ namespace Microsoft.CodeAnalysis.CSharp
         private readonly BoundStatement _rootStatement;
 
         private Dictionary<BoundValuePlaceholderBase, BoundExpression> _placeholderReplacementMapDoNotUseDirectly;
+
+        private readonly int _methodOrdinal;
+
+        /// <summary>
+        /// A lazily created delegate cache container of <see cref="DelegateCacheContainerKind.MethodScopedGeneric"/>.
+        /// </summary>
+        private TypeOrMethodScopedDelegateCacheContainer _lazyMethodScopedGenericDelegateCacheContainer;
 
         private LocalRewriter(
             CSharpCompilation compilation,
@@ -52,6 +60,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             _previousSubmissionFields = previousSubmissionFields;
             _allowOmissionOfConditionalCalls = allowOmissionOfConditionalCalls;
             _diagnostics = diagnostics;
+            _methodOrdinal = containingMethodOrdinal;
 
             Debug.Assert(instrumenter != null);
             _instrumenter = instrumenter;
@@ -115,6 +124,25 @@ namespace Microsoft.CodeAnalysis.CSharp
             get
             {
                 return !_inExpressionLambda;
+            }
+        }
+
+        private TypeOrMethodScopedDelegateCacheContainer MethodScopedGenericDelegateCacheContainer
+        {
+            get
+            {
+                var container = _lazyMethodScopedGenericDelegateCacheContainer;
+
+                if ((object)container == null)
+                {
+                    _lazyMethodScopedGenericDelegateCacheContainer
+                        = container
+                        = new TypeOrMethodScopedDelegateCacheContainer(_factory.TopLevelMethod, _methodOrdinal, _factory.ModuleBuilderOpt.CurrentGenerationOrdinal);
+
+                    _factory.AddNestedType(container);
+                }
+
+                return container;
             }
         }
 

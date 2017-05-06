@@ -1672,7 +1672,7 @@ class Program
 
             CompileAndVerify(text, parseOptions: TestOptions.Regular, expectedOutput: "42", verify: false).VerifyIL("Program.M()", @"
 {
-  // Code size       36 (0x24)
+  // Code size       51 (0x33)
   .maxstack  5
   .locals init (Program.<>c__DisplayClass1_0 V_0) //CS$<>8__locals0
   IL_0000:  newobj     ""Program.<>c__DisplayClass1_0..ctor()""
@@ -1685,10 +1685,16 @@ class Program
   IL_000f:  ldc.i4.s   40
   IL_0011:  stelem.i4
   IL_0012:  stfld      ""int[] Program.<>c__DisplayClass1_0.arr""
-  IL_0017:  ldloc.0
-  IL_0018:  ldftn      ""ref int Program.<>c__DisplayClass1_0.<M>g__N0()""
-  IL_001e:  newobj     ""Program.D..ctor(object, System.IntPtr)""
-  IL_0023:  ret
+  IL_0017:  ldsfld     ""Program.D Program.<>x.<N>w""
+  IL_001c:  dup
+  IL_001d:  brtrue.s   IL_0032
+  IL_001f:  pop
+  IL_0020:  ldloc.0
+  IL_0021:  ldftn      ""ref int Program.<>c__DisplayClass1_0.<M>g__N0()""
+  IL_0027:  newobj     ""Program.D..ctor(object, System.IntPtr)""
+  IL_002c:  dup
+  IL_002d:  stsfld     ""Program.D Program.<>x.<N>w""
+  IL_0032:  ret
 }").VerifyIL("Program.<>c__DisplayClass1_0.<M>g__N0()", @"
 {
   // Code size       24 (0x18)
