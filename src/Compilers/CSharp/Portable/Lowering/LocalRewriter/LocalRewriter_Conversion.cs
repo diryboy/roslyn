@@ -353,6 +353,8 @@ namespace Microsoft.CodeAnalysis.CSharp
                     // Try to see if we can cache the delegate
                     if (!targetMethod.IsStatic     // We only look at static methods for global caching here,
                         || boundedAsExtensionMethod    // and it cannot be bounded as extension method.
+                        || targetMethod.MethodKind == MethodKind.LocalFunction
+                        || _factory.CurrentMethod.MethodKind == MethodKind.LocalFunction
                         || _inExpressionLambda  // The tree structure / meaning for expression trees should not be touched.
                         || _factory.TopLevelMethod.MethodKind == MethodKind.StaticConstructor   // Avoid caching twice if people do it manually.
                         )
