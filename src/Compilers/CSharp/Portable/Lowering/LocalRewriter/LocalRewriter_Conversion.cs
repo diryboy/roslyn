@@ -339,26 +339,32 @@ namespace Microsoft.CodeAnalysis.CSharp
 
                 case ConversionKind.MethodGroup:
 
-                    // Rewriting this to use a cached delegate instance if the target method is static
-                    // There might be more works to do cache for non-static methods but at this time we only consider static ones
-                    var method = conversion.Method;
-                    if (!method.IsStatic     // The target method must be static,
-                        || method.IsExtensionMethod    // and cannot be used as extension method.
+                    var targetMethod = oldNode.SymbolOpt;
+                    Debug.Assert((object)targetMethod != null);
+
+                    var boundedAsExtensionMethod = oldNode.IsExtensionMethod;
+
+                    var mg = (BoundMethodGroup)rewrittenOperand;
+                    var oldSyntax = _factory.Syntax;
+                    _factory.Syntax = (mg.ReceiverOpt ?? mg).Syntax;
+                    var receiver = (targetMethod.IsStatic && !boundedAsExtensionMethod) ? _factory.Type(targetMethod.ContainingType) : VisitExpression(mg.ReceiverOpt);
+                    _factory.Syntax = oldSyntax;
+
+                    // Try to see if we can cache the delegate
+                    if (!targetMethod.IsStatic     // We only look at static methods for global caching here,
+                        || boundedAsExtensionMethod    // and it cannot be bounded as extension method.
                         || _inExpressionLambda  // The tree structure / meaning for expression trees should not be touched.
                         || _factory.TopLevelMethod.MethodKind == MethodKind.StaticConstructor   // Avoid caching twice if people do it manually.
                         )
                     {
                         // we eliminate the method group conversion entirely from the bound nodes following local lowering
-                        var mg = (BoundMethodGroup)rewrittenOperand;
-                        Debug.Assert((object)method != null);
-                        var oldSyntax = _factory.Syntax;
-                        _factory.Syntax = (mg.ReceiverOpt ?? mg).Syntax;
-                        var receiver = (method.IsStatic && !oldNode.IsExtensionMethod) ? _factory.Type(method.ContainingType) : VisitExpression(mg.ReceiverOpt);
-                        _factory.Syntax = oldSyntax;
-                        return new BoundDelegateCreationExpression(syntax, argument: receiver, methodOpt: method, isExtensionMethod: oldNode.IsExtensionMethod, type: rewrittenType);
+                        return new BoundDelegateCreationExpression(syntax, receiver, targetMethod, boundedAsExtensionMethod, rewrittenType);
                     }
-
-                    return RewriteStaticMethodGroupConversion(syntax, rewrittenOperand, method, (NamedTypeSymbol)rewrittenType);
+                    else
+                    {
+                        // Rewriting this to use a cached delegate
+                        return RewriteStaticMethodGroupConversion(syntax, receiver, targetMethod, (NamedTypeSymbol)rewrittenType);
+                    }
 
                 default:
                     break;
@@ -1367,7 +1373,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             }
         }
 
-        private BoundExpression RewriteStaticMethodGroupConversion(SyntaxNode syntax, BoundExpression operand, MethodSymbol targetMethod, NamedTypeSymbol delegateType)
+        private BoundExpression RewriteStaticMethodGroupConversion(SyntaxNode syntax, BoundExpression receiver, MethodSymbol targetMethod, NamedTypeSymbol delegateType)
         {
             Debug.Assert(delegateType.IsDelegateType());
             Debug.Assert((object)targetMethod != null);
@@ -1379,7 +1385,7 @@ namespace Microsoft.CodeAnalysis.CSharp
             var cacheField = cacheContainer.GetOrAddCacheField(_factory, delegateType, targetMethod);
 
             var boundCacheField = _factory.Field(null, cacheField);
-            var boundDelegateCreation = new BoundDelegateCreationExpression(syntax, operand, targetMethod, isExtensionMethod: false, type: delegateType)
+            var boundDelegateCreation = new BoundDelegateCreationExpression(syntax, receiver, targetMethod, isExtensionMethod: false, type: delegateType)
             {
                 WasCompilerGenerated = true
             };
