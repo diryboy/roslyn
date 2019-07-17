@@ -11,6 +11,7 @@ using Microsoft.CodeAnalysis.CSharp.Utilities;
 using Microsoft.CodeAnalysis.ErrorReporting;
 using Microsoft.CodeAnalysis.Options;
 using Microsoft.CodeAnalysis.Shared.Extensions;
+using Microsoft.CodeAnalysis.CSharp.Extensions;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Microsoft.CodeAnalysis.CSharp.Completion.Providers
@@ -76,14 +77,23 @@ namespace Microsoft.CodeAnalysis.CSharp.Completion.Providers
                 // and the generic won't be "partially written".
                 if (testPosition == position)
                 {
-                    var typeArgumentList = leftToken.GetAncestor<TypeArgumentListSyntax>();
-                    if (typeArgumentList != null)
+                    var genericName = leftToken.GetAncestor<GenericNameSyntax>();
+                    if (genericName != null)
                     {
-                        if (typeArgumentList.LessThanToken != default && typeArgumentList.GreaterThanToken != default)
-                        {
-                            testPosition = typeArgumentList.LessThanToken.SpanStart;
-                        }
+                        testPosition = genericName.SpanStart;
                     }
+                }
+
+                // Walk up the syntax tree to find the start position of our type
+                var tokenLeftOfType = syntaxTree.FindTokenOnLeftOfPosition(testPosition, cancellationToken);
+                if (tokenLeftOfType.IsKind(SyntaxKind.DotToken) && tokenLeftOfType.Parent.IsKind(SyntaxKind.QualifiedName))
+                {
+                    testPosition = tokenLeftOfType.Parent.SpanStart;
+                    tokenLeftOfType = syntaxTree.FindTokenOnLeftOfPosition(testPosition, cancellationToken);
+                }
+                if (tokenLeftOfType.IsKind(SyntaxKind.RefKeyword) && tokenLeftOfType.Parent.IsKind(SyntaxKind.RefType))
+                {
+                    testPosition = tokenLeftOfType.Parent.SpanStart;
                 }
             }
 
